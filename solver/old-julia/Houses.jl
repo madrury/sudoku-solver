@@ -1,5 +1,3 @@
-export House, Row, Column, Square, houseof
-
 # House Types:
 #   The three subdivisions of the board are Row, Column, and Square, which
 # are collectively called House(s).

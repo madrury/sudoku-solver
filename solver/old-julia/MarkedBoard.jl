@@ -1,22 +1,6 @@
-export MarkedBoard, iter, mark!
-
-# Temporary
-typealias Move Integer
-
-# MarkedBoard Type:
-#   Holds marks for each cell in a puzzle indication what symbols can-not
-# go there.
-type MarkedBoard 
-  marks::Matrix{Set{Integer}}
-  foundmoves::Vector{Move}
-end
-MarkedBoard(marks::Matrix{Set{Integer}}) = MarkedBoard(marks, Vector{Move}[])
-MarkedBoard() = MarkedBoard(reshape([Set{Integer}() for i in 1:81], 9, 9))
-
 function getindex(board::MarkedBoard, ix::Integer, jx::Integer)
   board.marks[ix, jx]
 end
-
 
 # Multimethod for iterating over all the marksets in a given house.
 function iter(board::MarkedBoard, row::Row)
@@ -50,5 +34,18 @@ end
 function mark!(board::MarkedBoard, house::House, sym::Integer)
   for markedcell in iter(board, house)
     push!(markedcell, sym)
+  end
+end
+
+# Take a board and add the marks implied by its unmasked cells
+function markup(board::Board)
+  mboard = MarkedBoard()
+  for i in 1:9, j in 1:9
+    sym = board.entries[i, j]
+    if board.mask[i, j] == 1
+      mark!(mboard, houseof(i, j, Row), sym)
+      mark!(mboard, houseof(i, j, Column), sym)
+      mark!(mboard, houseof(i, j, Square), sym)
+    end
   end
 end

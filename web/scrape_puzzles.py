@@ -1,20 +1,24 @@
+"""
+Scrape puzzles from websudoku.com and write the results to json over
+standard out.
+
+Usage
+-----
+    python scrape_puzzles.py <number of puzzles> <difficulty level (1-4)>
+"""
 import requests
 import re
 import json
 import sys
+import random
+import time
 
 regexps = {
-    'mask': re.compile(r'INPUT.+editmask.+VALUE="([0-1]+)"'),
-    'puzzle': re.compile(r'INPUT.+cheat.+VALUE="([0-9]+)"'),
-    'level': re.compile(r'INPUT.+level.+VALUE="([1-4])"'),
-    'id': re.compile(r'INPUT.+pid.+VALUE="([0-9]+)"')
+    'mask': re.compile(rb'INPUT.+editmask.+VALUE="([0-1]+)"'),
+    'puzzle': re.compile(rb'INPUT.+cheat.+VALUE="([0-9]+)"'),
+    'level': re.compile(rb'INPUT.+level.+VALUE="([1-4])"'),
+    'id': re.compile(rb'INPUT.+pid.+VALUE="([0-9]+)"')
 }
-
-def scrape_puzzle(html):
-    return {
-            key: re.search(regexps[key], html).groups()[0] 
-        for key in regexps.iterkeys()
-    }
 
 def scrape_puzzles(base_url, level, n):
     url = base_url
@@ -24,18 +28,21 @@ def scrape_puzzles(base_url, level, n):
                        'Gecko/20100101 Firefox/34.0}')
     }
     data = []
-    for _ in xrange(n):
+    for _ in range(n):
         html = requests.get(url, params=params, headers=headers).content
-        puzzle = scrape_puzzle(html)
+        puzzle = scrape_puzzle_data(html)
         data.append(puzzle)
+        time.sleep(random.uniform(1, 5)) 
     return data
 
-def write_puzzles(fnm, puzzles):
-    with open(fnm, 'wb') as fconn:
-        json.dump(puzzles, fconn)
+def scrape_puzzle_data(html):
+    return {
+        key: re.search(regexps[key], html).groups()[0].decode('utf-8') 
+        for key in regexps
+    }
 
 
 if __name__ == '__main__':
-    n, level = sys.argv[1], sys.argv[2]
+    n, level = int(sys.argv[1]), sys.argv[2]
     puzzs = scrape_puzzles('http://view.websudoku.com', level, n)
-    write_puzzles('puzzles.json', puzzs)
+    json.dump(puzzs, sys.stdout)

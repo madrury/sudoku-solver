@@ -1,6 +1,11 @@
 import json
+from itertools import product, chain
 
 class Board:
+
+    def iter_board(self):
+        for i, j in product(range(9), range(9)):
+            yield (i, j), self.data[(i, j)]
 
     def iter_row(self, row):
         for j in range(9):

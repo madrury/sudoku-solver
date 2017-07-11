@@ -67,7 +67,7 @@ class GameBoard(Board):
         return s
 
 
-def MarkedBoard(Board):
+class MarkedBoard(Board):
 
     def __init__(self):
         self.data = {
@@ -78,5 +78,15 @@ def MarkedBoard(Board):
 
     @classmethod
     def from_game_board(cls, game_board):
-        
+        board = cls()
+        for coords, number in game_board.iter_board():
+            if number != None:
+                board._add_marks_from_placed_number(coords, number)
+        return board
 
+    def _add_marks_from_placed_number(self, coords, entry):
+        placements = chain(self.iter_row_containing(coords),
+                           self.iter_column_containing(coords),
+                           self.iter_box_containing(coords))
+        for (i, j), marks in placements:
+            marks.add(entry)

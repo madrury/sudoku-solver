@@ -33,7 +33,7 @@ class Board:
         yield from self.iter_box(box_containing)
 
 
-def GameBoard(Board):
+class GameBoard(Board):
 
     def __init__(self):
         self.data = {
@@ -53,6 +53,18 @@ def GameBoard(Board):
         board.level = int(data['level'])
         board.id = data['id']
         return board
+
+    def __str__(self):
+        h_seperator = "+---+---+---+"
+        h_line = "|{}{}{}|{}{}{}|{}{}{}|"
+        s = ""
+        for i in range(9):
+            if i % 3 == 0:
+                s += h_seperator + '\n'
+            row_tuple = tuple(num if num else ' ' for _, num in self.iter_row(i))
+            s += h_line.format(*row_tuple) + '\n'
+        s += h_seperator
+        return s
 
 
 def MarkedBoard(Board):

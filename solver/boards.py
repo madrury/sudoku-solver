@@ -69,6 +69,8 @@ class GameBoard(Board):
 
 class MarkedBoard(Board):
 
+    all_marks = {1, 2, 3, 4, 5, 6, 7, 8, 9}
+
     def __init__(self):
         self.data = {
             (i, j): set() for i in range(9) for j in range(9)
@@ -85,6 +87,7 @@ class MarkedBoard(Board):
         return board
 
     def _add_marks_from_placed_number(self, coords, entry):
+        self.data[coords] = self.all_marks
         placements = chain(self.iter_row_containing(coords),
                            self.iter_column_containing(coords),
                            self.iter_box_containing(coords))

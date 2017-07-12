@@ -93,3 +93,16 @@ class MarkedBoard(Board):
                            self.iter_box_containing(coords))
         for (i, j), marks in placements:
             marks.add(entry)
+
+    def marks_for_number(self, number):
+        h_seperator = "+---+---+---+"
+        h_line = "|{}{}{}|{}{}{}|{}{}{}|"
+        s = ""
+        for i in range(9):
+            if i % 3 == 0:
+                s += h_seperator + '\n'
+            row_tuple = tuple('*' if number in marks else ' '
+                              for _, marks in self.iter_row(i))
+            s += h_line.format(*row_tuple) + '\n'
+        s += h_seperator
+        return s

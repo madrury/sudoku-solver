@@ -9,20 +9,20 @@ class Board:
     """
     def iter_board(self):
         for i, j in product(range(9), range(9)):
-            yield (i, j), self.data[(i, j)]
+            yield (i, j), self[(i, j)]
 
     def iter_row(self, row):
         for j in range(9):
-            yield (row, j), self.data[(row, j)]
+            yield (row, j), self[(row, j)]
 
     def iter_column(self, column):
         for i in range(9):
-            yield (i, column), self.data[(i, column)]
+            yield (i, column), self[(i, column)]
 
     def iter_box(self, box):
         for i in range(3*box[0], 3*box[0] + 3):
             for j in range(3*box[1], 3*box[1] + 3):
-                yield (i, j), self.data[(i, j)]
+                yield (i, j), self[(i, j)]
 
     def iter_row_containing(self, coords):
         row = coords[0]
@@ -35,6 +35,9 @@ class Board:
     def iter_box_containing(self, coords):
         box_containing = (coords[0] // 3, coords[1] // 3)
         yield from self.iter_box(box_containing)
+
+    def __getitem__(self, coords):
+        return self.data[coords]
 
 
 class GameBoard(Board):
@@ -52,6 +55,9 @@ class GameBoard(Board):
         }
         self.level = None
         self.id = None
+
+    def __setitem__(self, coords, number):
+        self.data[coords] = number
 
     @classmethod
     def read_from_json(cls, jsn):

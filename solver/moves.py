@@ -30,6 +30,11 @@ class Move(metaclass=abc.ABCMeta):
     def from_json(cls, jsn):
         pass
 
+    @classmethod
+    @abc.abstractmethod
+    def from_dict(cls, jsn):
+        pass
+
 
 class Finished(Move):
     """
@@ -48,9 +53,14 @@ class Finished(Move):
         return "Finished()"
 
     def to_json(self):
-        json.dumps({'name': 'Finished'})
+        return json.dumps({'name': 'Finished'})
 
+    @classmethod
     def from_json(cls, jsn):
+        return Finished()
+
+    @classmethod
+    def from_dict(cls, dct):
         return Finished()
 
 
@@ -88,7 +98,7 @@ class NakedSingle(Move):
 
     def to_json(self):
         return json.dumps({
-            'name': 'NakedSinge',
+            'name': 'NakedSingle',
             'coords': self.coords,
             'number': self.number
         })
@@ -96,4 +106,10 @@ class NakedSingle(Move):
     @classmethod
     def from_json(cls, jsn):
         jsn_dict = json.loads(jsn)
-        return cls(coords=jsn_dict['coords'], number=jsn_dict['number'])
+        return cls.from_dict(jsn_dict)
+
+    @classmethod 
+    def from_dict(cls, dct):
+        return cls(coords=dct['coords'], number=dct['number'])
+
+

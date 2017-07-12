@@ -127,10 +127,10 @@ class MarkedBoard(Board):
         board = cls()
         for coords, number in game_board.iter_board():
             if number != None:
-                board._add_marks_from_placed_number(coords, number)
+                board.add_marks_from_placed_number(coords, number)
         return board
 
-    def _add_marks_from_placed_number(self, coords, entry):
+    def add_marks_from_placed_number(self, coords, entry):
         self.data[coords] = self.all_marks
         placements = chain(self.iter_row_containing(coords),
                            self.iter_column_containing(coords),

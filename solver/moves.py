@@ -62,11 +62,11 @@ class NakedSingle(Move):
             self.coords, self.number)
 
     def to_json(self):
-        return {
+        return json.dumps({
             'name': 'NakedSinge',
-            'coords': [self.coords],
-            'number': [self.number]
-        }
+            'coords': self.coords,
+            'number': self.number
+        })
 
     @classmethod
     def from_json(cls, jsn):

@@ -10,7 +10,7 @@ class Move(metaclass=abc.ABCMeta):
     """
     @staticmethod
     @abc.abstractmethod
-    def search(marked_board):
+    def search(marked_board, already_found=None):
         pass
 
     @abc.abstractmethod
@@ -31,6 +31,29 @@ class Move(metaclass=abc.ABCMeta):
         pass
 
 
+class Finished(Move):
+    """
+    Represents the finished move, returned when a board is completely solved.
+    """
+    def search(marked_board, already_found=None):
+        for (i, j), marks in marked_board.iter_board():
+            if marks != MarkedBoard.all_marks:
+                return None
+        return Finished()
+
+    def apply(self, game_board, marked_board):
+        pass
+
+    def __repr__(self):
+        return "Finished()"
+
+    def to_json(self):
+        json.dumps({'name': 'Finished'})
+
+    def from_json(cls, jsn):
+        return Finished()
+
+
 class NakedSingle(Move):
     """A naked single move.
 
@@ -46,7 +69,8 @@ class NakedSingle(Move):
         self.number = number
 
     @staticmethod
-    def search(marked_board):
+    def search(marked_board, already_found=None):
+        found_moves = []
         for (i, j), marks in marked_board.iter_board():
             missing_marks = MarkedBoard.all_marks - marks
             if len(missing_marks) == 1:

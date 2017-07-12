@@ -52,6 +52,7 @@ class NakedSingle(Move):
             if len(missing_marks) == 1:
                 number = next(iter(missing_marks))
                 return NakedSingle(coords=(i, j), number=number)
+        return None
 
     def apply(self, game_board, marked_board):
         game_board[self.coords] = self.number

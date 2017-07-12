@@ -2,7 +2,11 @@ import json
 from itertools import product, chain
 
 class Board:
+    """Base class for board objects.
 
+    Contains methods commonly useful for dealing with a 9 by 9 array of
+    objects - as of now, various methods for iteration.
+    """
     def iter_board(self):
         for i, j in product(range(9), range(9)):
             yield (i, j), self.data[(i, j)]
@@ -34,7 +38,14 @@ class Board:
 
 
 class GameBoard(Board):
+    """Class for representing a sudoku game board.
 
+    A 9 by 9 array. Each entry can be a number between 1-9 inclusive, or None,
+    signaling no entry.
+
+    The data is stored in a dictionary, keys are tuples (i, j) in 1-9
+    inclusive, and values are either a number 1-9 inclusive, or None.
+    """
     def __init__(self):
         self.data = {
             (i, j): None for i in range(9) for j in range(9)
@@ -44,6 +55,20 @@ class GameBoard(Board):
 
     @classmethod
     def read_from_json(cls, jsn):
+        """Read from a json representation.
+
+        Json representations are pulled from websudoku.com, so the
+        representation here is the one used on that site. Json has the
+        following structure:
+
+          - puzzle: An 81 entry array containing the full solution to the
+            puzzle in row major order.
+          - mask: An 81 entry binary array indicating which entrys are masked
+            out in the initial state of the puzzle.
+          - level: The difficulty level of the puzzle, according to
+            websudoku.com.
+          - id: The unique identifier of the puzzle on websudoku.com.
+        """
         board = cls()
         data = json.loads(jsn)
         for ij, (mask_bit, num) in enumerate(zip(data['mask'], data['puzzle'])):
@@ -55,6 +80,7 @@ class GameBoard(Board):
         return board
 
     def __str__(self):
+        """Construct a string for pretty printing the game board."""
         h_seperator = "+---+---+---+"
         h_line = "|{}{}{}|{}{}{}|{}{}{}|"
         s = ""
@@ -68,7 +94,14 @@ class GameBoard(Board):
 
 
 class MarkedBoard(Board):
+    """Class for representing a marked up game board.
 
+    MarkedBoard is the main abstraction used to track information when solving
+    a puzzle. A MarkedBoard is a 9 by 9 grid, with each entry (cell) consisting
+    of a subset of {1, 2, 3, 4, 5, 6, 7, 8, 9}. A mark is an element in one of
+    these subsets, and its presense indicates that the given number *cannot* be
+    placed in that cell in the solution to the puzzle.
+    """
     all_marks = {1, 2, 3, 4, 5, 6, 7, 8, 9}
 
     def __init__(self):
@@ -80,6 +113,11 @@ class MarkedBoard(Board):
 
     @classmethod
     def from_game_board(cls, game_board):
+        """
+        Add all marks that are a consequence of the current state of a game
+        board.  I.e. add marks in every row, column, and box containing some
+        entry.
+        """
         board = cls()
         for coords, number in game_board.iter_board():
             if number != None:
@@ -95,6 +133,10 @@ class MarkedBoard(Board):
             marks.add(entry)
 
     def marks_for_number(self, number):
+        """
+        Create a string for pretty printing all the marks corresponding to a
+        given number.
+        """
         h_seperator = "+---+---+---+"
         h_line = "|{}{}{}|{}{}{}|{}{}{}|"
         s = ""

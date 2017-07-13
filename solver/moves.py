@@ -31,6 +31,9 @@ class AbstractMove(metaclass=abc.ABCMeta):
     def from_dict(cls, jsn):
         pass
 
+    def __eq__(self, other):
+        pass
+
 
 class MoveMixin:
 
@@ -75,6 +78,9 @@ class Finished(AbstractMove, MoveMixin):
     def to_dict(cls, jsn):
         return {'name': 'Finished'}
 
+    def __eq__(self, other):
+        return True
+
 
 class NakedSingle(AbstractMove, MoveMixin):
     """A naked single move.
@@ -118,6 +124,9 @@ class NakedSingle(AbstractMove, MoveMixin):
     @classmethod 
     def from_dict(cls, dct):
         return cls(coords=dct['coords'], number=dct['number'])
+
+    def __eq__(self, other):
+        return self.coords == other.coords and self.number == other.number
 
 
 class HiddenSingle(AbstractMove, MoveMixin):
@@ -186,3 +195,8 @@ class HiddenSingle(AbstractMove, MoveMixin):
     @classmethod 
     def from_dict(cls, dct):
         return cls(coords=dct['coords'], house=dct['house'], number=dct['number'])
+
+    def __eq__(self, other):
+        return (self.coords == other.coords and
+                self.number == other.number and
+                self.house == other.house)

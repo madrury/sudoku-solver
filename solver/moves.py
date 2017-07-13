@@ -22,7 +22,7 @@ class AbstractMove(metaclass=abc.ABCMeta):
         pass
 
     @abc.abstractmethod
-    def to_json(self):
+    def to_dict(self):
         pass
 
     @classmethod
@@ -32,6 +32,9 @@ class AbstractMove(metaclass=abc.ABCMeta):
 
 
 class MoveMixin:
+
+    def to_json(self):
+        return json.dumps(self.to_dict())
 
     @classmethod
     def from_json(cls, jsn):
@@ -62,13 +65,14 @@ class Finished(AbstractMove, MoveMixin):
     def to_json(self):
         return json.dumps({'name': 'Finished'})
 
-    @classmethod
-    def from_json(cls, jsn):
-        return Finished()
 
     @classmethod
     def from_dict(cls, dct):
         return Finished()
+
+    @classmethod
+    def to_dict(cls, jsn):
+        return {'name': 'Finished'}
 
 
 class NakedSingle(AbstractMove, MoveMixin):

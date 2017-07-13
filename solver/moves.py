@@ -1,5 +1,6 @@
 import abc
 import json
+from itertools import product
 from boards import GameBoard, MarkedBoard
 
 class AbstractMove(metaclass=abc.ABCMeta):
@@ -107,13 +108,81 @@ class NakedSingle(AbstractMove, MoveMixin):
         return "NakedSingle(coords={}, number={})".format(
             self.coords, self.number)
 
-    def to_json(self):
-        return json.dumps({
+    def to_dict(self):
+        return {
             'name': 'NakedSingle',
             'coords': self.coords,
             'number': self.number
-        })
+        }
 
     @classmethod 
     def from_dict(cls, dct):
         return cls(coords=dct['coords'], number=dct['number'])
+
+
+class HiddenSingle(AbstractMove, MoveMixin):
+
+    def __init__(self, coords, house, number):
+        self.coords = coords
+        self.house = house
+        self.number = number
+
+    @staticmethod
+    def search(marked_board, already_found=None):
+        searchers = [HiddenSingle._search_row,
+                     HiddenSingle._search_column,
+                     HiddenSingle._search_box]
+        for searcher in searchers:
+            hs = searcher(marked_board, already_found)
+            if hs:
+                return hs
+        return None
+
+    @staticmethod
+    def _search_row(marked_board, already_found):
+        for row_idx, number in product(range(9), range(1, 10)):
+            is_marked = [number in marks for _, marks in marked_board.iter_row(row_idx)]
+            if sum(is_marked) == 8:
+                column_idx = is_marked.index(False)
+                return HiddenSingle((row_idx, column_idx), 'row', number)
+        return None
+
+    @staticmethod
+    def _search_column(marked_board, already_found):
+        for column_idx, number in product(range(9), range(1, 10)):
+            is_marked = [number in marks for _, marks in marked_board.iter_column(column_idx)]
+            if sum(is_marked) == 8:
+                row_idx = is_marked.index(False)
+                return HiddenSingle((row_idx, column_idx), 'column', number)
+        return None
+
+    @staticmethod
+    def _search_box(marked_board, already_found):
+        for box_idxs, number in product(product(range(3), range(3)), range(1, 10)):
+            is_marked = [number in marks for _, marks in marked_board.iter_box(box_idxs)]
+            if sum(is_marked) == 8:
+                local_box_idx = is_marked.index(False)
+                row_idx, column_idx = (3*box_idxs[0] + local_box_idx // 3,
+                                       3*box_idxs[1] + local_box_idx % 3)
+                return HiddenSingle((row_idx, column_idx), 'box', number)
+        return None
+
+    def apply(self, game_board, marked_board):
+        game_board[self.coords] = self.number
+        marked_board.add_marks_from_placed_number(self.coords, self.number)
+
+    def __repr__(self):
+        return "HiddenSingle(coords={}, house={}, number={})".format(
+            self.coords, self.house, self.number)
+
+    def to_dict(self):
+        return {
+            'name': 'HiddenSingle',
+            'coords': self.coords,
+            'house': self.house,
+            'number': self.number
+        }
+
+    @classmethod 
+    def from_dict(cls, dct):
+        return cls(coords=dct['coords'], house=dct['house'], number=dct['number'])

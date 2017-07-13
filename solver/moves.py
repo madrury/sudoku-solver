@@ -2,7 +2,7 @@ import abc
 import json
 from boards import GameBoard, MarkedBoard
 
-class Move(metaclass=abc.ABCMeta):
+class AbstractMove(metaclass=abc.ABCMeta):
     """An abstract base class for moves used in solving a sudoku board.
 
     A move is an atomic piece of logic that updates the state of a game board
@@ -27,20 +27,27 @@ class Move(metaclass=abc.ABCMeta):
 
     @classmethod
     @abc.abstractmethod
-    def from_json(cls, jsn):
-        pass
-
-    @classmethod
-    @abc.abstractmethod
     def from_dict(cls, jsn):
         pass
 
 
-class Finished(Move):
+class MoveMixin:
+
+    @classmethod
+    def from_json(cls, jsn):
+        jsn_dict = json.loads(jsn)
+        return cls.from_dict(jsn_dict)
+
+
+class Finished(AbstractMove, MoveMixin):
     """
     Represents the finished move, returned when a board is completely solved.
     """
     def search(marked_board, already_found=None):
+        """Check that the marked board is fully solved.
+
+        Simply checks that all cells have full marks.
+        """
         for (i, j), marks in marked_board.iter_board():
             if marks != MarkedBoard.all_marks:
                 return None
@@ -64,7 +71,7 @@ class Finished(Move):
         return Finished()
 
 
-class NakedSingle(Move):
+class NakedSingle(AbstractMove, MoveMixin):
     """A naked single move.
 
     This is the most basic sudoku move. A naked single is when a cell can only
@@ -102,11 +109,6 @@ class NakedSingle(Move):
             'coords': self.coords,
             'number': self.number
         })
-
-    @classmethod
-    def from_json(cls, jsn):
-        jsn_dict = json.loads(jsn)
-        return cls.from_dict(jsn_dict)
 
     @classmethod 
     def from_dict(cls, dct):

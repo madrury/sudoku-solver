@@ -111,5 +111,3 @@ class NakedSingle(Move):
     @classmethod 
     def from_dict(cls, dct):
         return cls(coords=dct['coords'], number=dct['number'])
-
-

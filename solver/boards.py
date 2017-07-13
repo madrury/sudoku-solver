@@ -60,10 +60,20 @@ class GameBoard(Board):
         self.data[coords] = number
 
     @classmethod
-    def read_from_json(cls, jsn):
+    def from_json(cls, jsn):
         """Read from a json representation.
 
-        Json representations are pulled from websudoku.com, so the
+        Json representations are pulled from websudoku.com, for a discussion of
+        the structure, see the from_dict method.
+        """
+        dct = json.loads(jsn)
+        return cls.from_dict(dct)
+
+    @classmethod
+    def from_dict(cls, dct):
+        """Read from a dictionary representation.
+
+        Dictionary representations are pulled from websudoku.com, so the
         representation here is the one used on that site. Json has the
         following structure:
 
@@ -76,13 +86,12 @@ class GameBoard(Board):
           - id: The unique identifier of the puzzle on websudoku.com.
         """
         board = cls()
-        data = json.loads(jsn)
-        for ij, (mask_bit, num) in enumerate(zip(data['mask'], data['puzzle'])):
+        for ij, (mask_bit, num) in enumerate(zip(dct['mask'], dct['puzzle'])):
             i, j = ij // 9, ij % 9
             if mask_bit == '1':
-                board.data[(i, j)] = int(num)
-        board.level = int(data['level'])
-        board.id = data['id']
+                board[(i, j)] = int(num)
+        board.level = int(dct['level'])
+        board.id = dct['id']
         return board
 
     def __str__(self):

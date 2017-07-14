@@ -8,6 +8,20 @@ class AbstractMove(metaclass=abc.ABCMeta):
 
     A move is an atomic piece of logic that updates the state of a game board
     or marked board based on some deterministic, deductive logic.
+
+    Methods that must be implemented by a Move object
+    --------------------------------------------------
+
+    - search: Scan a marked board for a move of the given type. If one is
+      found, return the move.
+    - apply: Apply a move to a game board and marked board, filling in entries
+      and eliminating possiblities as appropriate.
+    - to_dict: Return a dictionary representiaton of the move.  Useful for
+      serialization to json.
+    - from_dict: Construct a move from a dictionary representation of the move,
+      useful for de-serializing from json.
+    - __repr__
+    - __eq__
     """
     @staticmethod
     @abc.abstractmethod
@@ -69,7 +83,6 @@ class Finished(AbstractMove, MoveMixin):
     def to_json(self):
         return json.dumps({'name': 'Finished'})
 
-
     @classmethod
     def from_dict(cls, dct):
         return Finished()
@@ -90,7 +103,7 @@ class NakedSingle(AbstractMove, MoveMixin):
     eliminated).
     
     This is one of only two moves that can fill in a number in the board, the
-    other is a HiddenSingle.
+    other is a hidden single.
     """
     def __init__(self, coords, number):
         self.coords = coords
@@ -130,7 +143,15 @@ class NakedSingle(AbstractMove, MoveMixin):
 
 
 class HiddenSingle(AbstractMove, MoveMixin):
+    """A hidden single move.
 
+    The second most basic sudoku move. A hidden single is when a house (row,
+    column, or box) has exaclty one cell that can old a given number, as the
+    number has been eliminated from all other cells in the house.
+
+    This is one of only two moves that can fill a number in the board, the
+    other is a naked single.
+    """
     def __init__(self, coords, house, number):
         self.coords = coords
         self.house = house

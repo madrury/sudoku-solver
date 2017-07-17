@@ -88,7 +88,7 @@ class GameBoard(Board):
         board = cls()
         for ij, (mask_bit, num) in enumerate(zip(dct['mask'], dct['puzzle'])):
             i, j = ij // 9, ij % 9
-            if mask_bit == '1':
+            if mask_bit == '0':
                 board[(i, j)] = int(num)
         board.level = int(dct['level'])
         board.id = dct['id']

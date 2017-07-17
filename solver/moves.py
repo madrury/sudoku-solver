@@ -48,6 +48,9 @@ class AbstractMove(metaclass=abc.ABCMeta):
     def __eq__(self, other):
         pass
 
+    def __hash__(self, other):
+        pass
+
 
 class MoveMixin:
 
@@ -93,6 +96,9 @@ class Finished(AbstractMove, MoveMixin):
 
     def __eq__(self, other):
         return True
+
+    def __hash__(self):
+        return 0
 
 
 class NakedSingle(AbstractMove, MoveMixin):
@@ -140,6 +146,9 @@ class NakedSingle(AbstractMove, MoveMixin):
 
     def __eq__(self, other):
         return self.coords == other.coords and self.number == other.number
+
+    def __hash__(self):
+        return hash((self.coords, self.number))
 
 
 class HiddenSingle(AbstractMove, MoveMixin):
@@ -222,6 +231,9 @@ class HiddenSingle(AbstractMove, MoveMixin):
                 self.number == other.number and
                 self.house == other.house)
 
+    def __hash__(self):
+        return hash((self.coords, self.number, self.house))
+
 
 class IntersectionTrick(AbstractMove, MoveMixin):
 
@@ -258,10 +270,12 @@ class IntersectionTrick(AbstractMove, MoveMixin):
                     all(number in marks for marks in second_row) and
                     not all(number in marks for marks in complement_row))
                 if found_intersection_trick:
-                    return IntersectionTrick(box=box.box_coords,
-                                             house="row",
-                                             idx=(2 - i),
-                                             number=number)
+                    it = IntersectionTrick(box=box.box_coords,
+                                           house="row",
+                                           idx=(2 - i),
+                                           number=number)
+                    if not already_found or it not in already_found:
+                        return it
         return None
 
     @staticmethod
@@ -278,12 +292,13 @@ class IntersectionTrick(AbstractMove, MoveMixin):
                     all(number in marks for marks in first_column) and
                     all(number in marks for marks in second_column) and
                     not all(number in marks for marks in complement_column))
-
                 if found_intersection_trick:
-                    return IntersectionTrick(box=box.box_coords,
-                                             house="column",
-                                             idx=(2 - i),
-                                             number=number)
+                    it = IntersectionTrick(box=box.box_coords,
+                                           house="column",
+                                           idx=(2 - i),
+                                           number=number)
+                    if not already_found or it not in already_found:
+                        return it
         return None
 
     def apply(self, game_board, marked_board):
@@ -328,3 +343,6 @@ class IntersectionTrick(AbstractMove, MoveMixin):
     def __eq__(self, other):
         return (self.box == other.box and self.house == other.house and
                 self.idx == other.idx and self.number == other.number)
+
+    def __hash__(self):
+        return hash((self.box, self.house, self.idx, self.number))

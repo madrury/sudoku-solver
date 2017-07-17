@@ -310,12 +310,12 @@ class IntersectionTrick(AbstractMove, MoveMixin):
             raise RuntimeError("House in IntersectionTrick.apply must be row "
                                "or column.")
 
-    def _apply_to_row(marked_board):
+    def _apply_to_row(self, marked_board):
         for column_idx in range(9):
             if not IntersectionTrick._in_box((self.idx, column_idx), self.box):
                 marked_board[(self.idx, column_idx)].add(self.number)
 
-    def _apply_to_column(marked_board):
+    def _apply_to_column(self, marked_board):
         for row_idx in range(9):
             if not IntersectionTrick._in_box((row_idx, self.idx), self.box):
                 marked_board[(row_idx, self.idx)].add(self.number)

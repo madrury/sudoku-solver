@@ -173,6 +173,6 @@ class Box:
 
     def __getitem__(self, coords):
         return self.board[(
-            self.box_coords[0] + 3 * box_coords[0],
-            self.box_coords[1] + 3 * box_coords[1] 
+            3*self.box_coords[0] + coords[0],
+            3*self.box_coords[1] + coords[1] 
         )]

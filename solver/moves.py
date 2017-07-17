@@ -233,25 +233,26 @@ class IntersectionTrick(AbstractMove, MoveMixin):
 
     @staticmethod
     def search(marked_board, already_found=None):
-        for box_coords in product(range(3), range(3))
+        for box_coords in product(range(3), range(3)):
             box = Box(marked_board, box_coords)
-            it_in_row = self._search_row(box, already_found)
+            it_in_row = IntersectionTrick._search_row(box, already_found)
             if it_in_row:
                 return it_in_row
-            it_in_column = self._search_column(box, already_found)
+            it_in_column = IntersectionTrick._search_column(box, already_found)
             if it_in_column:
                 return it_in_column
         return None
 
-    def _search_row(self, box, already_found):
+    @staticmethod
+    def _search_row(box, already_found):
         top_row = [box[(0, i)] for i in range(3)]
         middle_row = [box[(1, i)] for i in range(3)]
         bottom_row = [box[(2, i)] for i in range(3)]
         rows = [top_row, middle_row, bottom_row]
-        for i, two_rows in enumerate(combinations(rows)):
+        for i, two_rows in enumerate(combinations(rows, 2)):
             complement_row = rows[2 - i]
-            for number in range(9):
-                first_row, second_row = two_rows
+            first_row, second_row = two_rows
+            for number in range(1, 10):
                 found_intersection_trick = (
                     all(number in marks for marks in first_row) and
                     all(number in marks for marks in second_row) and
@@ -263,15 +264,16 @@ class IntersectionTrick(AbstractMove, MoveMixin):
                                              number=number)
         return None
 
-    def _search_column(self, box, already_found):
+    @staticmethod
+    def _search_column(box, already_found):
         top_column = [box[(i, 0)] for i in range(3)]
         middle_column = [box[(i, 1)] for i in range(3)]
         bottom_column = [box[(i, 2)] for i in range(3)]
         columns = [top_column, middle_column, bottom_column]
-        for i, two_columns in enumerate(combinations(columns)):
+        for i, two_columns in enumerate(combinations(columns, 2)):
             complement_column = columns[2 - i]
-            for number in range(9):
-                first_column, second_column = two_columns
+            first_column, second_column = two_columns
+            for number in range(1, 10):
                 found_intersection_trick = (
                     all(number in marks for marks in first_column) and
                     all(number in marks for marks in second_column) and
@@ -285,9 +287,9 @@ class IntersectionTrick(AbstractMove, MoveMixin):
         return None
 
     def apply(self, game_board, marked_board):
-        if self.house = "row":
+        if self.house == "row":
             self._apply_to_row(marked_board)
-        elif self.house = "column":
+        elif self.house == "column":
             self._apply_to_column(marked_board)
         else:
             raise RuntimeError("House in IntersectionTrick.apply must be row "
@@ -324,5 +326,5 @@ class IntersectionTrick(AbstractMove, MoveMixin):
         return IntersectionTrick(self.box, self.house, self.idx, self.number)
 
     def __eq__(self, other):
-        return (self.box == other.box and self.house = other.house and
-                self.idx == other.box and self.number = other.number)
+        return (self.box == other.box and self.house == other.house and
+                self.idx == other.idx and self.number == other.number)

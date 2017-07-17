@@ -1,7 +1,7 @@
 import abc
 import json
-from itertools import product
-from boards import GameBoard, MarkedBoard
+from itertools import product, combinations
+from boards import GameBoard, MarkedBoard, Box
 
 class AbstractMove(metaclass=abc.ABCMeta):
     """An abstract base class for moves used in solving a sudoku board.
@@ -221,3 +221,108 @@ class HiddenSingle(AbstractMove, MoveMixin):
         return (self.coords == other.coords and
                 self.number == other.number and
                 self.house == other.house)
+
+
+class IntersectionTrick(AbstractMove, MoveMixin):
+
+    def __init__(self, box, house, idx, number):
+        self.box = box
+        self.house = house
+        self.idx = idx
+        self.number = number
+
+    @staticmethod
+    def search(marked_board, already_found=None):
+        for box_coords in product(range(3), range(3))
+            box = Box(marked_board, box_coords)
+            it_in_row = self._search_row(box, already_found)
+            if it_in_row:
+                return it_in_row
+            it_in_column = self._search_column(box, already_found)
+            if it_in_column:
+                return it_in_column
+        return None
+
+    def _search_row(self, box, already_found):
+        top_row = [box[(0, i)] for i in range(3)]
+        middle_row = [box[(1, i)] for i in range(3)]
+        bottom_row = [box[(2, i)] for i in range(3)]
+        rows = [top_row, middle_row, bottom_row]
+        for i, two_rows in enumerate(combinations(rows)):
+            complement_row = rows[2 - i]
+            for number in range(9):
+                first_row, second_row = two_rows
+                found_intersection_trick = (
+                    all(number in marks for marks in first_row) and
+                    all(number in marks for marks in second_row) and
+                    not all(number in marks for marks in complement_row))
+                if found_intersection_trick:
+                    return IntersectionTrick(box=box.box_coords,
+                                             house="row",
+                                             idx=(2 - i),
+                                             number=number)
+        return None
+
+    def _search_column(self, box, already_found):
+        top_column = [box[(i, 0)] for i in range(3)]
+        middle_column = [box[(i, 1)] for i in range(3)]
+        bottom_column = [box[(i, 2)] for i in range(3)]
+        columns = [top_column, middle_column, bottom_column]
+        for i, two_columns in enumerate(combinations(columns)):
+            complement_column = columns[2 - i]
+            for number in range(9):
+                first_column, second_column = two_columns
+                found_intersection_trick = (
+                    all(number in marks for marks in first_column) and
+                    all(number in marks for marks in second_column) and
+                    not all(number in marks for marks in complement_column))
+
+                if found_intersection_trick:
+                    return IntersectionTrick(box=box.box_coords,
+                                             house="column",
+                                             idx=(2 - i),
+                                             number=number)
+        return None
+
+    def apply(self, game_board, marked_board):
+        if self.house = "row":
+            self._apply_to_row(marked_board)
+        elif self.house = "column":
+            self._apply_to_column(marked_board)
+        else:
+            raise RuntimeError("House in IntersectionTrick.apply must be row "
+                               "or column.")
+
+    def _apply_to_row(marked_board):
+        for column_idx in range(9):
+            if not IntersectionTrick._in_box((self.idx, column_idx), self.box):
+                marked_board[(self.idx, column_idx)].add(self.number)
+
+    def _apply_to_column(marked_board):
+        for row_idx in range(9):
+            if not IntersectionTrick._in_box((row_idx, self.idx), self.box):
+                marked_board[(row_idx, self.idx)].add(self.number)
+
+    @staticmethod
+    def _in_box(coords, box):
+        return (box[0] == coords[0] // 3) and (box[1] == coords[1] // 3)
+            
+    def __repr__(self):
+        return "IntersectionTrick(box={}, house={}, idx={}, number={})".format(
+            self.box, self.house, self.idx, self.number)
+
+    def to_dict(self):
+        return {
+            "box": self.box,
+            "house": self.house,
+            "idx": self.idx,
+            "number": self.number
+        }
+
+    @classmethod
+    def from_dict(cls, dct):
+        return IntersectionTrick(self.box, self.house, self.idx, self.number)
+
+    def __eq__(self, other):
+        return (self.box == other.box and self.house = other.house and
+                self.idx == other.box and self.number = other.number)

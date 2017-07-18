@@ -1,5 +1,6 @@
 import abc
 import json
+from copy import deepcopy
 from itertools import product, combinations
 from boards import GameBoard, MarkedBoard, Box
 
@@ -16,11 +17,6 @@ class AbstractMove(metaclass=abc.ABCMeta):
       found, return the move.
     - apply: Apply a move to a game board and marked board, filling in entries
       and eliminating possiblities as appropriate.
-    - to_dict: Return a dictionary representiaton of the move.  Useful for
-      serialization to json.
-    - from_dict: Construct a move from a dictionary representation of the move,
-      useful for de-serializing from json.
-    - __repr__
     - __eq__
     """
     @staticmethod
@@ -32,27 +28,27 @@ class AbstractMove(metaclass=abc.ABCMeta):
     def apply(self, game_board, marked_board):
         pass
 
-    @abc.abstractmethod
-    def __repr__(self):
-        pass
-
-    @abc.abstractmethod
-    def to_dict(self):
-        pass
-
-    @classmethod
-    @abc.abstractmethod
-    def from_dict(cls, jsn):
-        pass
-
-    def __eq__(self, other):
-        pass
-
     def __hash__(self, other):
         pass
 
 
 class MoveMixin:
+    """Methods in common to all move objects.
+
+    This is contains serialization and printing methods. Move objects are
+    essentially data containers with a few static methods, so these can be
+    safely assimilated in one place.
+    """ 
+    def to_dict(self):
+        dct = deepcopy(self.__dict__)
+        dct['name'] = self.__class__.__name__
+        return dct
+    
+    @classmethod
+    def from_dict(cls, dct):
+        d = deepcopy(dct)
+        del d['name']
+        return cls(**d)
 
     def to_json(self):
         return json.dumps(self.to_dict())
@@ -61,6 +57,16 @@ class MoveMixin:
     def from_json(cls, jsn):
         jsn_dict = json.loads(jsn)
         return cls.from_dict(jsn_dict)
+
+    def __repr__(self):
+        class_attr_strings = ["{}={}".format(name, value)
+                              for name, value in self.__dict__.items()]
+        return ("{}(".format(self.__class__.__name__)
+                + ', '.join(class_attr_strings)
+                + ')')
+
+    def __eq__(self, other):
+        return self.to_dict() == other.to_dict()
 
 
 class Finished(AbstractMove, MoveMixin):
@@ -79,23 +85,6 @@ class Finished(AbstractMove, MoveMixin):
 
     def apply(self, game_board, marked_board):
         pass
-
-    def __repr__(self):
-        return "Finished()"
-
-    def to_json(self):
-        return json.dumps({'name': 'Finished'})
-
-    @classmethod
-    def from_dict(cls, dct):
-        return Finished()
-
-    @classmethod
-    def to_dict(cls, jsn):
-        return {'name': 'Finished'}
-
-    def __eq__(self, other):
-        return True
 
     def __hash__(self):
         return 0
@@ -128,24 +117,6 @@ class NakedSingle(AbstractMove, MoveMixin):
     def apply(self, game_board, marked_board):
         game_board[self.coords] = self.number
         marked_board.add_marks_from_placed_number(self.coords, self.number)
-
-    def __repr__(self):
-        return "NakedSingle(coords={}, number={})".format(
-            self.coords, self.number)
-
-    def to_dict(self):
-        return {
-            'name': 'NakedSingle',
-            'coords': self.coords,
-            'number': self.number
-        }
-
-    @classmethod 
-    def from_dict(cls, dct):
-        return cls(coords=dct['coords'], number=dct['number'])
-
-    def __eq__(self, other):
-        return self.coords == other.coords and self.number == other.number
 
     def __hash__(self):
         return hash((self.coords, self.number))
@@ -209,27 +180,6 @@ class HiddenSingle(AbstractMove, MoveMixin):
     def apply(self, game_board, marked_board):
         game_board[self.coords] = self.number
         marked_board.add_marks_from_placed_number(self.coords, self.number)
-
-    def __repr__(self):
-        return "HiddenSingle(coords={}, house={}, number={})".format(
-            self.coords, self.house, self.number)
-
-    def to_dict(self):
-        return {
-            'name': 'HiddenSingle',
-            'coords': self.coords,
-            'house': self.house,
-            'number': self.number
-        }
-
-    @classmethod 
-    def from_dict(cls, dct):
-        return cls(coords=dct['coords'], house=dct['house'], number=dct['number'])
-
-    def __eq__(self, other):
-        return (self.coords == other.coords and
-                self.number == other.number and
-                self.house == other.house)
 
     def __hash__(self):
         return hash((self.coords, self.number, self.house))
@@ -326,25 +276,5 @@ class IntersectionTrick(AbstractMove, MoveMixin):
     def _in_box(coords, box):
         return (box[0] == coords[0] // 3) and (box[1] == coords[1] // 3)
             
-    def __repr__(self):
-        return "IntersectionTrick(box={}, house={}, idx={}, number={})".format(
-            self.box, self.house, self.idx, self.number)
-
-    def to_dict(self):
-        return {
-            "box": self.box,
-            "house": self.house,
-            "idx": self.idx,
-            "number": self.number
-        }
-
-    @classmethod
-    def from_dict(cls, dct):
-        return IntersectionTrick(self.box, self.house, self.idx, self.number)
-
-    def __eq__(self, other):
-        return (self.box == other.box and self.house == other.house and
-                self.idx == other.idx and self.number == other.number)
-
     def __hash__(self):
         return hash((self.box, self.house, self.idx, self.number))

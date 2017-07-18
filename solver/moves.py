@@ -186,7 +186,19 @@ class HiddenSingle(AbstractMove, MoveMixin):
 
 
 class IntersectionTrick(AbstractMove, MoveMixin):
+    """An intersection trick move.
 
+    An intersection trick is found when the following two conditions are
+    satisfied:
+        - A number is available to be placed in that box.
+        - The number can only be placed inside the intersection of a single row
+          or column in that box.
+    Consequently, that number *cannot* be placed in any other cell in the same
+    row or column.
+
+    The intersection trick does not place any numbers in the game board, it
+    only places marks.
+    """
     def __init__(self, box, house, idx, number):
         self.box = box
         self.house = house
@@ -207,10 +219,7 @@ class IntersectionTrick(AbstractMove, MoveMixin):
 
     @staticmethod
     def _search_row(box, already_found):
-        top_row = [box[(0, i)] for i in range(3)]
-        middle_row = [box[(1, i)] for i in range(3)]
-        bottom_row = [box[(2, i)] for i in range(3)]
-        rows = [top_row, middle_row, bottom_row]
+        rows = [[box[(j, i)] for i in range(3)] for j in range(3)]
         for i, two_rows in enumerate(combinations(rows, 2)):
             complement_row = rows[2 - i]
             first_row, second_row = two_rows
@@ -230,10 +239,7 @@ class IntersectionTrick(AbstractMove, MoveMixin):
 
     @staticmethod
     def _search_column(box, already_found):
-        top_column = [box[(i, 0)] for i in range(3)]
-        middle_column = [box[(i, 1)] for i in range(3)]
-        bottom_column = [box[(i, 2)] for i in range(3)]
-        columns = [top_column, middle_column, bottom_column]
+        columns = [[box[(i, j)] for i in range(3)] for j in range(3)]
         for i, two_columns in enumerate(combinations(columns, 2)):
             complement_column = columns[2 - i]
             first_column, second_column = two_columns

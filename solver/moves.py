@@ -218,22 +218,22 @@ class IntersectionTrick(AbstractMove, MoveMixin):
         return None
 
     @staticmethod
-    def _search(box, already_found, row_or_column):
-        if row_or_column == "row":
-            rows_or_columns = [[box[(j, i)] for i in range(3)] for j in range(3)]
-        elif row_or_column == "column":
-            rows_or_columns = [[box[(i, j)] for i in range(3)] for j in range(3)]
+    def _search(box, already_found, house):
+        if house == "row":
+            houses = [[box[(j, i)] for i in range(3)] for j in range(3)]
+        elif house == "column":
+            houses = [[box[(i, j)] for i in range(3)] for j in range(3)]
         else:
-            raise ValueError("row_or_column must be 'row' or 'column'")
+            raise ValueError("house must be 'row' or 'column'")
         for number in range(1, 10):
-            possible_in_row_or_column = [
-                any(number not in marks for marks in row_or_column)
-                for row_or_column in rows_or_columns]
-            if sum(possible_in_row_or_column) == 1:
-                intersection_row_or_column = possible_in_row_or_column.index(True)
+            possible_in_house = [
+                any(number not in marks for marks in house)
+                for house in houses]
+            if sum(possible_in_house) == 1:
+                intersection_house = possible_in_house.index(True)
                 it = IntersectionTrick(box=box.box_coords,
-                                       house=row_or_column,
-                                       idx=intersection_row_or_column,
+                                       house=house,
+                                       idx=intersection_house,
                                        number=number)
                 if not already_found or it not in already_found:
                     return it

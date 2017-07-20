@@ -134,7 +134,7 @@ class TestNakedDouble(unittest.TestCase):
             (1, 6): 7, (1, 7): 8, (1, 8): 9
         })
         nd = NakedDouble.search(mb)
-        self.assertEqual(nd, NakedDouble("box", (0, 0), ((1, 1), (1, 2)), (1, 2)))
+        self.assertEqual(nd, NakedDouble("row", 1, (1, 2), (1, 2)))
 
 
 if __name__ == '__main__':

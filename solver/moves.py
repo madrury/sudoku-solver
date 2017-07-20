@@ -1,7 +1,7 @@
 import abc
 import json
 from copy import deepcopy
-from itertools import product, combinations
+from itertools import product, combinations, tee
 from boards import GameBoard, MarkedBoard, Box
 
 
@@ -286,11 +286,11 @@ class NakedDouble(AbstractMove, MoveMixin):
     def search(marked_board, already_found=None):
         search_params = [
             ("row", marked_board.iter_row,
-                range(9), lambda row, col: row),
+                range(9), lambda coords: coords[0]),
             ("column", marked_board.iter_column,
-                range(9), lambda row, col: col),
+                range(9), lambda coords: coords[1]),
             ("box", marked_board.iter_box, 
-                 product(range(3), range(3)), lambda row, col: (row, col))
+                 product(range(3), range(3)), lambda coords: coords)
         ]
         for search_param in search_params:
             nd = NakedDouble._search(marked_board, already_found, *search_param)
@@ -302,13 +302,12 @@ class NakedDouble(AbstractMove, MoveMixin):
     def _search(marked_board, already_found, house_name, house_iter,
                     house_idx_iter, coord_picker):
         for house_idx in house_idx_iter:
-            traverse_twice = tee(house_iter(house_idx), 2)
-            for number, (((row1, col1), marks1), ((row2, col2), marks2)) in 
-                product(range(1, 10), traverse_twice):
+            traverse_twice = product(house_iter(house_idx), house_iter(house_idx))
+            numbers_and_marks = product(range(1, 10), traverse_twice)
+            for number, ((coords1, marks1), (coords2, marks2)) in numbers_and_marks:
                 if len(marks1) == 7 and len(marks2) == 7 and marks1 == marks2:
                     numbers = list(FULL_MARKS - marks1)
-                    double_idxs = [coord_picker(row1, col1),
-                                   coord_picker(row2, col2)]
+                    double_idxs = [coord_picker(coords1), coord_picker(coords2)]
                     nd = NakedDouble(house=house_name,
                                      house_idx=house_idx,
                                      double_idxs=double_idxs,

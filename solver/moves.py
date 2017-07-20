@@ -4,6 +4,9 @@ from copy import deepcopy
 from itertools import product, combinations
 from boards import GameBoard, MarkedBoard, Box
 
+
+FULL_MARKS = {1, 2, 3, 4, 5, 6, 7, 8, 9}
+
 class AbstractMove(metaclass=abc.ABCMeta):
     """An abstract base class for moves used in solving a sudoku board.
 
@@ -151,7 +154,8 @@ class HiddenSingle(AbstractMove, MoveMixin):
     @staticmethod
     def _search_row(marked_board, already_found):
         for row_idx, number in product(range(9), range(1, 10)):
-            is_marked = [number in marks for _, marks in marked_board.iter_row(row_idx)]
+            is_marked = [number in marks 
+                         for _, marks in marked_board.iter_row(row_idx)]
             if sum(is_marked) == 8:
                 column_idx = is_marked.index(False)
                 return HiddenSingle((row_idx, column_idx), 'row', number)
@@ -160,7 +164,8 @@ class HiddenSingle(AbstractMove, MoveMixin):
     @staticmethod
     def _search_column(marked_board, already_found):
         for column_idx, number in product(range(9), range(1, 10)):
-            is_marked = [number in marks for _, marks in marked_board.iter_column(column_idx)]
+            is_marked = [number in marks
+                         for _, marks in marked_board.iter_column(column_idx)]
             if sum(is_marked) == 8:
                 row_idx = is_marked.index(False)
                 return HiddenSingle((row_idx, column_idx), 'column', number)
@@ -169,7 +174,8 @@ class HiddenSingle(AbstractMove, MoveMixin):
     @staticmethod
     def _search_box(marked_board, already_found):
         for box_idxs, number in product(product(range(3), range(3)), range(1, 10)):
-            is_marked = [number in marks for _, marks in marked_board.iter_box(box_idxs)]
+            is_marked = [number in marks
+                         for _, marks in marked_board.iter_box(box_idxs)]
             if sum(is_marked) == 8:
                 local_box_idx = is_marked.index(False)
                 row_idx, column_idx = (3*box_idxs[0] + local_box_idx // 3,
@@ -266,3 +272,56 @@ class IntersectionTrick(AbstractMove, MoveMixin):
             
     def __hash__(self):
         return hash((self.box, self.house, self.idx, self.number))
+
+
+class NakedDouble(AbstractMove, MoveMixin): 
+
+    def __init__(self, house, house_idx, double_idxs, numbers):
+        self.house = house
+        self.house_idx = house_idx
+        self.double_idxs = double_idxs
+        self.numbers = set(numbers)
+
+    @staticmethod
+    def search(marked_board, already_found=None):
+        search_params = [
+            ("row", marked_board.iter_row,
+                range(9), lambda row, col: row),
+            ("column", marked_board.iter_column,
+                range(9), lambda row, col: col),
+            ("box", marked_board.iter_box, 
+                 product(range(3), range(3)), lambda row, col: (row, col))
+        ]
+        for search_param in search_params:
+            nd = NakedDouble._search(marked_board, already_found, *search_param)
+            if nd:
+                return nd
+        return None
+
+    @staticmethod
+    def _search(marked_board, already_found, house_name, house_iter,
+                    house_idx_iter, coord_picker):
+        for house_idx in house_idx_iter:
+            traverse_twice = tee(house_iter(house_idx), 2)
+            for number, (((row1, col1), marks1), ((row2, col2), marks2)) in 
+                product(range(1, 10), traverse_twice):
+                if len(marks1) == 7 and len(marks2) == 7 and marks1 == marks2:
+                    numbers = list(FULL_MARKS - marks1)
+                    double_idxs = [coord_picker(row1, col1),
+                                   coord_picker(row2, col2)]
+                    nd = NakedDouble(house=house_name,
+                                     house_idx=house_idx,
+                                     double_idxs=double_idxs,
+                                     numbers=numbers)
+                    if not already_found or it not in already_found:
+                        return nd
+        return None
+
+    def apply(self, game_board, marked_board):
+        pass
+
+    def __hash__(self, other):
+        return (self.house == other.house and
+                self.house_idx == other.house_idx and
+                self.double_idxs == other.double_idxs and
+                self.numbers == other.numbers)

@@ -318,7 +318,14 @@ class NakedDouble(AbstractMove, MoveMixin):
         return None
 
     def apply(self, game_board, marked_board):
-        pass
+        iterator = {
+            'row': marked_board.iter_row,
+            'column': marked_board.iter_column,
+            'box': marked_board.iter_box
+        }[self.house_name]
+        for coords, marks in iterator(self.house_idx):
+            if coords not in self.double_idxs:
+                marks.update(self.numbers)
 
     def __hash__(self, other):
         return (self.house == other.house and

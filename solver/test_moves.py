@@ -133,7 +133,7 @@ class TestNakedDouble(unittest.TestCase):
             (1, 0): 6, (1, 6): 7, (1, 7): 8, (1, 8): 9
         })
         nd = NakedDouble.search(mb)
-        self.assertEqual(nd, NakedDouble("row", 1, (1, 2), (1, 2)))
+        self.assertEqual(nd, NakedDouble("row", 1, ((1, 1), (1, 2)), (1, 2)))
 
     def test_naked_double_column(self):
         gb, mb = new_boards({
@@ -145,7 +145,7 @@ class TestNakedDouble(unittest.TestCase):
             (8, 1): 9
         })
         nd = NakedDouble.search(mb)
-        self.assertEqual(nd, NakedDouble("column", 1, (1, 2), (1, 2)))
+        self.assertEqual(nd, NakedDouble("column", 1, ((1, 1), (2, 1)), (1, 2)))
 
     def test_naked_double_box(self):
         gb, mb = new_boards({

@@ -276,7 +276,12 @@ class IntersectionTrick(AbstractMove, MoveMixin):
 
 
 class NakedDouble(AbstractMove, MoveMixin): 
+    """A naked double move.
 
+    A naked double occurs in a house when there are only two cells in that
+    house capable of holding any two numbers.  This allows these possibilities
+    to be eliminated from all other cells in that house.
+    """
     def __init__(self, house, house_idx, double_idxs, numbers):
         self.house = house
         self.house_idx = house_idx
@@ -286,12 +291,9 @@ class NakedDouble(AbstractMove, MoveMixin):
     @staticmethod
     def search(marked_board, already_found=None):
         search_params = [
-            ("row", marked_board.iter_row,
-                range(9), lambda coords: coords[1]),
-            ("column", marked_board.iter_column,
-                range(9), lambda coords: coords[0]),
-            ("box", marked_board.iter_box, 
-                 product(range(3), range(3)), lambda coords: coords)
+            ("row", marked_board.iter_row, range(9)),
+            ("column", marked_board.iter_column, range(9)),
+            ("box", marked_board.iter_box, product(range(3), range(3)))
         ]
         for search_param in search_params:
             nd = NakedDouble._search(marked_board, already_found, *search_param)
@@ -300,17 +302,16 @@ class NakedDouble(AbstractMove, MoveMixin):
         return None
 
     @staticmethod
-    def _search(marked_board, already_found, house_name, house_iter,
-                    house_idx_iter, coord_picker):
+    def _search(marked_board, already_found, house_name,
+                house_iter, house_idx_iter):
         for house_idx in house_idx_iter:
             traverse_twice = pairs_exclude_diagonal(house_iter(house_idx))
             for (coords1, marks1), (coords2, marks2) in traverse_twice:
                 if len(marks1) == 7 and len(marks2) == 7 and marks1 == marks2:
                     numbers = list(FULL_MARKS - marks1)
-                    double_idxs = (coord_picker(coords1), coord_picker(coords2))
                     nd = NakedDouble(house=house_name,
                                      house_idx=house_idx,
-                                     double_idxs=double_idxs,
+                                     double_idxs=(coords1, coords2),
                                      numbers=numbers)
                     if not already_found or it not in already_found:
                         return nd

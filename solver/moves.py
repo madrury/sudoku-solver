@@ -2,7 +2,7 @@ import abc
 import json
 from copy import deepcopy
 from itertools import product, combinations, chain
-from boards import GameBoard, MarkedBoard, Box
+from boards import GameBoard, MarkedBoard
 from utils import pairs_exclude_diagonal 
 
 
@@ -260,9 +260,9 @@ class IntersectionTrick(AbstractMove, MoveMixin):
                     for marks in houses_out_box[intersection_house])
                 if possible_somewhere:
                     it = IntersectionTrick(box=box_coords,
-                                        house=house,
-                                        idx=intersection_house,
-                                        number=number)
+                                           house=house,
+                                           idx=intersection_house,
+                                           number=number)
                     if (not already_found or it not in already_found):
                         return it
         return None

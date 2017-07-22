@@ -95,11 +95,23 @@ class TestIntersectionTrick(unittest.TestCase):
     def test_intersection_trick_row(self):
         gb, mb = new_boards({
             (0, 0): 2, (0, 1): 3, (0, 2): 4,
+            (1, 6): 8, (1, 7): 9,
             (2, 0): 5, (2, 1): 6, (2, 2): 7,
-            (1, 6): 8, (1, 7): 9
         })
         it = IntersectionTrick.search(mb)
         self.assertEqual(it, IntersectionTrick((0, 0), "row", 1, 1))
+
+    def test_intersection_trick_row_no_marks(self):
+        gb, mb = new_boards({
+            (0, 0): 2, (0, 1): 3, (0, 2): 4,
+            (1, 5): 2, (1, 6): 8, (1, 7): 9,
+            (2, 0): 5, (2, 1): 6, (2, 2): 7,
+            (4, 4): 1,
+            (7, 3): 1,
+            (8, 8): 1
+        })
+        it = IntersectionTrick.search(mb)
+        self.assertEqual(it, None)
 
     def test_intersection_trick_column(self):
         gb, mb = new_boards({
@@ -109,6 +121,18 @@ class TestIntersectionTrick(unittest.TestCase):
         })
         it = IntersectionTrick.search(mb)
         self.assertEqual(it, IntersectionTrick((0, 0), "column", 1, 1))
+
+    def test_intersection_trick_column_no_marks(self):
+        gb, mb = new_boards({
+            (0, 0): 2, (1, 0): 3, (2, 0): 4,
+            (5, 1): 2, (6, 1): 8, (7, 1): 9,
+            (0, 2): 5, (1, 2): 6, (2, 2): 7,
+            (4, 4): 1,
+            (3, 7): 1,
+            (8, 8): 1
+        })
+        it = IntersectionTrick.search(mb)
+        self.assertEqual(it, None)
 
     def test_intersection_trick_top_middle(self):
         gb, mb = new_boards({

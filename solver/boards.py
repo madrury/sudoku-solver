@@ -163,16 +163,3 @@ class MarkedBoard(Board):
             s += h_line.format(*row_tuple) + '\n'
         s += h_seperator
         return s
-
-
-class Box:
-
-    def __init__(self, board, box_coords):
-        self.board = board
-        self.box_coords = box_coords
-
-    def __getitem__(self, coords):
-        return self.board[(
-            3*self.box_coords[0] + coords[0],
-            3*self.box_coords[1] + coords[1] 
-        )]

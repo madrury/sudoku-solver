@@ -1,7 +1,7 @@
 import abc
 import json
 from copy import deepcopy
-from itertools import product, combinations, tee
+from itertools import product, combinations, chain
 from boards import GameBoard, MarkedBoard, Box
 from utils import pairs_exclude_diagonal 
 
@@ -215,35 +215,56 @@ class IntersectionTrick(AbstractMove, MoveMixin):
     @staticmethod
     def search(marked_board, already_found=None):
         for box_coords in product(range(3), range(3)):
-            box = Box(marked_board, box_coords)
-            it_in_row = IntersectionTrick._search(box, already_found, "row")
+            it_in_row = IntersectionTrick._search(marked_board, box_coords,
+                                                  already_found, "row")
             if it_in_row:
                 return it_in_row
-            it_in_column = IntersectionTrick._search(box, already_found, "column")
+            it_in_column = IntersectionTrick._search(marked_board, box_coords,
+                                                     already_found, "column")
             if it_in_column:
                 return it_in_column
         return None
 
     @staticmethod
-    def _search(box, already_found, house):
+    def _search(marked_board, box_coords, already_found, house):
         if house == "row":
-            houses = [[box[(j, i)] for i in range(3)] for j in range(3)]
+            # The inner lists represent rows in both of these data structures.
+            houses_in_box = [
+                [marked_board[(i, j)] 
+                    for j in range(3*box_coords[1], 3*box_coords[1] + 3)]
+                for i in range(3*box_coords[0], 3*box_coords[0] + 3)]
+            houses_out_box = [[marked_board[(i, j)] 
+                         for j in chain(range(0, 3*box_coords[1]),
+                                        range(3*box_coords[1] + 3, 9))]
+                    for i in range(3*box_coords[0], 3*box_coords[0] + 3)]
         elif house == "column":
-            houses = [[box[(i, j)] for i in range(3)] for j in range(3)]
+            # The inner lists represent columns in both of these data structures.
+            houses_in_box = [
+                [marked_board[(i, j)] 
+                    for i in range(3*box_coords[0], 3*box_coords[0] + 3)]
+                for j in range(3*box_coords[1], 3*box_coords[1] + 3)]
+            houses_out_box = [[marked_board[(i, j)] 
+                         for i in chain(range(0, 3*box_coords[0]),
+                                        range(3*box_coords[0] + 3, 9))]
+                    for j in range(3*box_coords[1], 3*box_coords[1] + 3)]
         else:
             raise ValueError("house must be 'row' or 'column'")
         for number in range(1, 10):
-            possible_in_house = [
+            possible_in_intersection = [
                 any(number not in marks for marks in house)
-                for house in houses]
-            if sum(possible_in_house) == 1:
-                intersection_house = possible_in_house.index(True)
-                it = IntersectionTrick(box=box.box_coords,
-                                       house=house,
-                                       idx=intersection_house,
-                                       number=number)
-                if not already_found or it not in already_found:
-                    return it
+                for house in houses_in_box]
+            if sum(possible_in_intersection) == 1:
+                intersection_house = possible_in_intersection.index(True)
+                possible_somewhere = any(
+                    number not in marks
+                    for marks in houses_out_box[intersection_house])
+                if possible_somewhere:
+                    it = IntersectionTrick(box=box_coords,
+                                        house=house,
+                                        idx=intersection_house,
+                                        number=number)
+                    if (not already_found or it not in already_found):
+                        return it
         return None
 
     def apply(self, game_board, marked_board):
@@ -281,6 +302,8 @@ class NakedDouble(AbstractMove, MoveMixin):
     A naked double occurs in a house when there are only two cells in that
     house capable of holding any two numbers.  This allows these possibilities
     to be eliminated from all other cells in that house.
+
+    A naked double does not place any number on the game board, only marks.
     """
     def __init__(self, house, house_idx, double_idxs, numbers):
         self.house = house

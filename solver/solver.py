@@ -1,7 +1,9 @@
 import copy
 import json
 from boards import GameBoard, MarkedBoard
-from moves import Finished, NakedSingle, HiddenSingle, IntersectionTrick
+from moves import (Finished, NakedSingle,
+                   HiddenSingle, IntersectionTrick,
+                   NakedDouble)
 
 
 class NotSolvableException(RuntimeError):
@@ -13,7 +15,8 @@ class Solver:
     moves = [Finished,
              NakedSingle, 
              HiddenSingle,
-             IntersectionTrick]
+             IntersectionTrick,
+             NakedDouble]
 
     def __init__(self, game_board):
         self.game_board = copy.deepcopy(game_board)
@@ -47,7 +50,8 @@ class Solution(list):
         'Finished': Finished,
         'NakedSingle': NakedSingle,
         'HiddenSingle': HiddenSingle,
-        'IntersectionTrick': IntersectionTrick
+        'IntersectionTrick': IntersectionTrick,
+        'NakedDouble': NakedDouble
     }
 
     def to_json(self):

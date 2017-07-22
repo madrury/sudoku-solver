@@ -336,7 +336,7 @@ class NakedDouble(AbstractMove, MoveMixin):
                                      house_idx=house_idx,
                                      double_idxs=(coords1, coords2),
                                      numbers=numbers)
-                    if not already_found or it not in already_found:
+                    if not already_found or nd not in already_found:
                         return nd
         return None
 
@@ -345,13 +345,11 @@ class NakedDouble(AbstractMove, MoveMixin):
             'row': marked_board.iter_row,
             'column': marked_board.iter_column,
             'box': marked_board.iter_box
-        }[self.house_name]
+        }[self.house]
         for coords, marks in iterator(self.house_idx):
             if coords not in self.double_idxs:
                 marks.update(self.numbers)
 
-    def __hash__(self, other):
-        return (self.house == other.house and
-                self.house_idx == other.house_idx and
-                self.double_idxs == other.double_idxs and
-                self.numbers == other.numbers)
+    def __hash__(self):
+        return hash((self.house, self.house_idx, 
+                    self.double_idxs, tuple(sorted(self.numbers))))

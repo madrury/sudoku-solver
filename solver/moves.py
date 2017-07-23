@@ -29,7 +29,7 @@ class AbstractMove(metaclass=abc.ABCMeta):
         pass
 
     @abc.abstractmethod
-    def apply(self, game_board, marked_board):
+    def compute_marks(self, marked_board):
         pass
 
     def __hash__(self, other):
@@ -87,7 +87,7 @@ class Finished(AbstractMove, MoveMixin):
                 return None
         return Finished()
 
-    def apply(self, game_board, marked_board):
+    def compute_marks(self, marked_board):
         pass
 
     def __hash__(self):
@@ -118,9 +118,9 @@ class NakedSingle(AbstractMove, MoveMixin):
                 return NakedSingle(coords=(i, j), number=number)
         return None
 
-    def apply(self, game_board, marked_board):
-        game_board[self.coords] = self.number
-        marked_board.add_marks_from_placed_number(self.coords, self.number)
+    def compute_marks(self, marked_board):
+        return marked_board.compute_marks_from_placed_number(
+                   self.coords, self.number)
 
     def __hash__(self):
         return hash((self.coords, self.number))
@@ -184,9 +184,9 @@ class HiddenSingle(AbstractMove, MoveMixin):
                 return HiddenSingle((row_idx, column_idx), 'box', number)
         return None
 
-    def apply(self, game_board, marked_board):
-        game_board[self.coords] = self.number
-        marked_board.add_marks_from_placed_number(self.coords, self.number)
+    def compute_marks(self, marked_board):
+        return marked_board.compute_marks_from_placed_number(
+                   self.coords, self.number)
 
     def __hash__(self):
         return hash((self.coords, self.number, self.house))
@@ -267,26 +267,30 @@ class IntersectionTrick(AbstractMove, MoveMixin):
                         return it
         return None
 
-    def apply(self, game_board, marked_board):
+    def compute_marks(self, marked_board):
         if self.house == "row":
-            self._apply_to_row(marked_board)
+            self._compute_marks_row(marked_board)
         elif self.house == "column":
-            self._apply_to_column(marked_board)
+            self._compute_marks_column(marked_board)
         else:
             raise RuntimeError("House in IntersectionTrick.apply must be row "
                                "or column.")
 
     def _apply_to_row(self, marked_board):
+        new_marks = defaultdict(set)
         for column_idx in range(9):
             coords = (3*self.box[0] + self.idx, column_idx)
             if not IntersectionTrick._in_box(coords, self.box):
-                marked_board[coords].add(self.number)
+                new_marks[coords].add(self.number)
+        return new_marks
 
     def _apply_to_column(self, marked_board):
+        new_marks = defaultdict(set)
         for row_idx in range(9):
             coords = (row_idx, 3*self.box[1] + self.idx)
             if not IntersectionTrick._in_box(coords, self.box):
-                marked_board[coords].add(self.number)
+                new_marks[coords].add(self.number)
+        return new_marks
 
     @staticmethod
     def _in_box(coords, box):
@@ -340,7 +344,7 @@ class NakedDouble(AbstractMove, MoveMixin):
                         return nd
         return None
 
-    def apply(self, game_board, marked_board):
+    def compute_marks(self, marked_board):
         iterator = {
             'row': marked_board.iter_row,
             'column': marked_board.iter_column,
@@ -348,7 +352,8 @@ class NakedDouble(AbstractMove, MoveMixin):
         }[self.house]
         for coords, marks in iterator(self.house_idx):
             if coords not in self.double_idxs:
-                marks.update(self.numbers)
+                new_marks.update(self.numbers)
+        return new_marks
 
     def __hash__(self):
         return hash((self.house, self.house_idx, 

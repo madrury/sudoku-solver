@@ -1,5 +1,6 @@
 import json
 from itertools import product, chain
+from collections import defaultdict
 
 class Board:
     """Base class for board objects.
@@ -139,13 +140,25 @@ class MarkedBoard(Board):
                 board.add_marks_from_placed_number(coords, number)
         return board
 
+    def add_marks(self, new_marks):
+        for coords, marks in new_marks.items():
+            self[coords].update(marks)
+
     def add_marks_from_placed_number(self, coords, entry):
-        self.data[coords] = self.all_marks
+        new_marks = self.compute_marks_from_placed_number(coords, entry)
+        self.add_marks(new_marks)
+
+    def compute_marks_from_placed_number(self, coords, entry):
+        # Note, this should probably be a static method, but we need access
+        # to the generators over the board.
+        new_marks = defaultdict(set)
+        new_marks[coords] = self.all_marks
         placements = chain(self.iter_row_containing(coords),
                            self.iter_column_containing(coords),
                            self.iter_box_containing(coords))
-        for (i, j), marks in placements:
-            marks.add(entry)
+        for (i, j), _ in placements:
+            new_marks[(i, j)].add(entry)
+        return new_marks
 
     def marks_for_number(self, number):
         """

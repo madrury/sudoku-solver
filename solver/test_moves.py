@@ -174,13 +174,24 @@ class TestNakedDouble(unittest.TestCase):
     def test_naked_double_box(self):
         gb, mb = new_boards({
             (0, 0): 3, (0, 1): 4, (0, 6): 8, (0, 7): 9,
+            (1, 0): 5, (1, 1): 6, (1, 6): 1,
+            (2, 2): 7,
+            (6, 0): 8,
+            (7, 0): 9, (7, 1): 2
+        })
+        nd = NakedDouble.search(mb)
+        self.assertEqual(nd, NakedDouble("box", (0, 0), ((0, 2), (2, 0)), (1, 2)))
+
+    def test_naked_double_box_no_move(self):
+        gb, mb = new_boards({
+            (0, 0): 3, (0, 1): 4, (0, 6): 8, (0, 7): 9,
             (1, 0): 5, (1, 1): 6, (1, 6): 1, (1, 7): 2,
             (2, 2): 7,
             (6, 0): 8, (6, 1): 1,
             (7, 0): 9, (7, 1): 2
         })
         nd = NakedDouble.search(mb)
-        self.assertEqual(nd, NakedDouble("box", (0, 0), ((0, 2), (2, 0)), (1, 2)))
+        self.assertEqual(nd, None)
 
 
 if __name__ == '__main__':

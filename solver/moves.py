@@ -234,20 +234,12 @@ class IntersectionTrick(AbstractMove, MoveMixin):
                 [marked_board[(i, j)] 
                     for j in range(3*box_coords[1], 3*box_coords[1] + 3)]
                 for i in range(3*box_coords[0], 3*box_coords[0] + 3)]
-            houses_out_box = [[marked_board[(i, j)] 
-                         for j in chain(range(0, 3*box_coords[1]),
-                                        range(3*box_coords[1] + 3, 9))]
-                    for i in range(3*box_coords[0], 3*box_coords[0] + 3)]
         elif house == "column":
             # The inner lists represent columns in both of these data structures.
             houses_in_box = [
                 [marked_board[(i, j)] 
                     for i in range(3*box_coords[0], 3*box_coords[0] + 3)]
                 for j in range(3*box_coords[1], 3*box_coords[1] + 3)]
-            houses_out_box = [[marked_board[(i, j)] 
-                         for i in chain(range(0, 3*box_coords[0]),
-                                        range(3*box_coords[0] + 3, 9))]
-                    for j in range(3*box_coords[1], 3*box_coords[1] + 3)]
         else:
             raise ValueError("house must be 'row' or 'column'")
         for number in range(1, 10):
@@ -256,40 +248,39 @@ class IntersectionTrick(AbstractMove, MoveMixin):
                 for house in houses_in_box]
             if sum(possible_in_intersection) == 1:
                 intersection_house = possible_in_intersection.index(True)
-                possible_somewhere = any(
-                    number not in marks
-                    for marks in houses_out_box[intersection_house])
-                if possible_somewhere:
-                    it = IntersectionTrick(box=box_coords,
-                                           house=house,
-                                           idx=intersection_house,
-                                           number=number)
-                    if (not already_found or it not in already_found):
-                        return it
+                it = IntersectionTrick(box=box_coords,
+                                        house=house,
+                                        idx=intersection_house,
+                                        number=number)
+                new_marks = it.compute_marks(marked_board)
+                if new_marks and (not already_found or it not in already_found):
+                    return it
         return None
 
     def compute_marks(self, marked_board):
         if self.house == "row":
-            self._compute_marks_row(marked_board)
+            return self._compute_marks_row(marked_board)
         elif self.house == "column":
-            self._compute_marks_column(marked_board)
+            return self._compute_marks_column(marked_board)
         else:
             raise RuntimeError("House in IntersectionTrick.apply must be row "
                                "or column.")
 
-    def _apply_to_row(self, marked_board):
+    def _compute_marks_row(self, marked_board):
         new_marks = defaultdict(set)
         for column_idx in range(9):
             coords = (3*self.box[0] + self.idx, column_idx)
-            if not IntersectionTrick._in_box(coords, self.box):
+            if (not self.number in marked_board[coords] and 
+                not IntersectionTrick._in_box(coords, self.box)):
                 new_marks[coords].add(self.number)
         return new_marks
 
-    def _apply_to_column(self, marked_board):
+    def _compute_marks_column(self, marked_board):
         new_marks = defaultdict(set)
         for row_idx in range(9):
             coords = (row_idx, 3*self.box[1] + self.idx)
-            if not IntersectionTrick._in_box(coords, self.box):
+            if (not self.number in marked_board[coords] and 
+                not IntersectionTrick._in_box(coords, self.box)):
                 new_marks[coords].add(self.number)
         return new_marks
 

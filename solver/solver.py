@@ -38,7 +38,8 @@ class Solver:
                 self.solution.append(mv)
                 return self.solution
             else:
-                mv.apply(self.game_board, self.marked_board)
+                marks = mv.compute_marks(self.marked_board)
+                self.marked_board.add_marks(marks)
                 self.solution.append(mv)
                 self.found_moves.add(mv)                
         return self.solution

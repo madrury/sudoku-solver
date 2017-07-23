@@ -2,6 +2,7 @@ import abc
 import json
 from copy import deepcopy
 from itertools import product, combinations, chain
+from collections import defaultdict
 from boards import GameBoard, MarkedBoard
 from utils import pairs_exclude_diagonal 
 
@@ -340,11 +341,13 @@ class NakedDouble(AbstractMove, MoveMixin):
                                      house_idx=house_idx,
                                      double_idxs=(coords1, coords2),
                                      numbers=numbers)
-                    if not already_found or nd not in already_found:
+                    new_marks = nd.compute_marks(marked_board)
+                    if new_marks and (not already_found or nd not in already_found):
                         return nd
         return None
 
     def compute_marks(self, marked_board):
+        new_marks = defaultdict(set)
         iterator = {
             'row': marked_board.iter_row,
             'column': marked_board.iter_column,
@@ -352,7 +355,9 @@ class NakedDouble(AbstractMove, MoveMixin):
         }[self.house]
         for coords, marks in iterator(self.house_idx):
             if coords not in self.double_idxs:
-                new_marks.update(self.numbers)
+                for number in self.numbers:
+                    if number not in marked_board[coords]:
+                        new_marks[coords].add(number)
         return new_marks
 
     def __hash__(self):

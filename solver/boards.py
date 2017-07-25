@@ -37,6 +37,16 @@ class Board:
         box_containing = (coords[0] // 3, coords[1] // 3)
         yield from self.iter_box(box_containing)
 
+    def iter_boxes_in_row(self, row):
+        row = [marks for _, marks in self.iter_row(row)]
+        for i in range(3):
+            yield row[3*i: (3*i+3)]
+
+    def iter_boxes_in_column(self, column):
+        column = [marks for _, marks in self.iter_column(column)]
+        for j in range(3):
+            yield column[3*j: (3*j+3)]
+
     def __getitem__(self, coords):
         return self.data[coords]
 

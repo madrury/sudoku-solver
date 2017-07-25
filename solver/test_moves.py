@@ -1,6 +1,8 @@
 from boards import GameBoard, MarkedBoard
 from moves import (NakedSingle, HiddenSingle,
-                   IntersectionTrickPointing, NakedDouble)
+                   IntersectionTrickPointing, 
+                   IntersectionTrickClaiming,
+                   NakedDouble)
 import unittest
 
 
@@ -152,6 +154,17 @@ class TestIntersectionTrickPointing(unittest.TestCase):
         self.assertEqual(it, 
             IntersectionTrickPointing((1, 1), "column", 0, 1))
 
+
+class TestIntersectionTrickClaiming(unittest.TestCase):
+
+    def test_intersection_trick_row(self):
+        gb, mb = new_boards({
+            (0, 0): 2, (0, 1): 3, (0, 2): 4,
+            (0, 6): 5, (0, 7): 6, (0, 8): 7,
+        })
+        it = IntersectionTrickClaiming.search(mb)
+        self.assertEqual(it, 
+            IntersectionTrickClaiming("row", 1, 0, 1))
 
 class TestNakedDouble(unittest.TestCase):
 

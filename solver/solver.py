@@ -1,8 +1,9 @@
 import copy
 import json
 from boards import GameBoard, MarkedBoard
-from moves import (Finished, NakedSingle,
-                   HiddenSingle, IntersectionTrick,
+from moves import (Finished,
+                   NakedSingle, HiddenSingle,
+                   IntersectionTrickPointing,
                    NakedDouble)
 
 
@@ -15,7 +16,7 @@ class Solver:
     moves = [Finished,
              NakedSingle, 
              HiddenSingle,
-             IntersectionTrick,
+             IntersectionTrickPointing,
              NakedDouble]
 
     def __init__(self, game_board):
@@ -51,7 +52,7 @@ class Solution(list):
         'Finished': Finished,
         'NakedSingle': NakedSingle,
         'HiddenSingle': HiddenSingle,
-        'IntersectionTrick': IntersectionTrick,
+        'IntersectionTrick': IntersectionTrickPointing,
         'NakedDouble': NakedDouble
     }
 

@@ -193,7 +193,7 @@ class HiddenSingle(AbstractMove, MoveMixin):
         return hash((self.coords, self.number, self.house))
 
 
-class IntersectionTrick(AbstractMove, MoveMixin):
+class IntersectionTrickPointing(AbstractMove, MoveMixin):
     """An intersection trick move.
 
     An intersection trick is found when the following two conditions are
@@ -216,12 +216,12 @@ class IntersectionTrick(AbstractMove, MoveMixin):
     @staticmethod
     def search(marked_board, already_found=None):
         for box_coords in product(range(3), range(3)):
-            it_in_row = IntersectionTrick._search(marked_board, box_coords,
-                                                  already_found, "row")
+            it_in_row = IntersectionTrickPointing._search(
+                marked_board, box_coords, already_found, "row")
             if it_in_row:
                 return it_in_row
-            it_in_column = IntersectionTrick._search(marked_board, box_coords,
-                                                     already_found, "column")
+            it_in_column = IntersectionTrickPointing._search(
+                marked_board, box_coords, already_found, "column")
             if it_in_column:
                 return it_in_column
         return None
@@ -248,10 +248,9 @@ class IntersectionTrick(AbstractMove, MoveMixin):
                 for house in houses_in_box]
             if sum(possible_in_intersection) == 1:
                 intersection_house = possible_in_intersection.index(True)
-                it = IntersectionTrick(box=box_coords,
-                                        house=house,
-                                        idx=intersection_house,
-                                        number=number)
+                it = IntersectionTrickPointing(
+                    box=box_coords, house=house,
+                    idx=intersection_house, number=number)
                 new_marks = it.compute_marks(marked_board)
                 if new_marks and (not already_found or it not in already_found):
                     return it
@@ -263,15 +262,15 @@ class IntersectionTrick(AbstractMove, MoveMixin):
         elif self.house == "column":
             return self._compute_marks_column(marked_board)
         else:
-            raise RuntimeError("House in IntersectionTrick.apply must be row "
-                               "or column.")
+            raise RuntimeError("House in IntersectionTrickPointing.apply must"
+                "be row or column.")
 
     def _compute_marks_row(self, marked_board):
         new_marks = defaultdict(set)
         for column_idx in range(9):
             coords = (3*self.box[0] + self.idx, column_idx)
             if (not self.number in marked_board[coords] and 
-                not IntersectionTrick._in_box(coords, self.box)):
+                not IntersectionTrickPointing._in_box(coords, self.box)):
                 new_marks[coords].add(self.number)
         return new_marks
 
@@ -280,7 +279,7 @@ class IntersectionTrick(AbstractMove, MoveMixin):
         for row_idx in range(9):
             coords = (row_idx, 3*self.box[1] + self.idx)
             if (not self.number in marked_board[coords] and 
-                not IntersectionTrick._in_box(coords, self.box)):
+                not IntersectionTrickPointing._in_box(coords, self.box)):
                 new_marks[coords].add(self.number)
         return new_marks
 

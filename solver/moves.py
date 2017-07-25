@@ -310,13 +310,13 @@ class IntersectionTrickClaiming(AbstractMove, MoveMixin):
         ]
         for search_param in search_params:
             it = IntersectionTrickClaiming._search(
-                marked_board, already_found, *search_params)
+                marked_board, already_found, *search_param)
             if it:
                 return it
         return None
 
     @staticmethod
-    def _search(marked_board, box_coords, already_found, house_name, iterator):
+    def _search(marked_board, already_found, house_name, iterator):
         for house_idx, number in product(range(9), range(1, 10)):
             possible_in_box_intersection = [
                 any(number not in marks for marks in box_intersection)
@@ -336,19 +336,17 @@ class IntersectionTrickClaiming(AbstractMove, MoveMixin):
     def compute_marks(self, marked_board):
         new_marks = defaultdict(set)
         box_coords = self.box_coords
-        iterator = {
-            "row": marked_board.iter_row(self.house_idx),
-            "column": marked_board.iter_column(self.house_idx)
-        }[self.house_name]
-        for coords, marks in iterator:
-            if (not IntersectionTrickClaiming._in_box(coords, box_coords) and
-                number not in marked_board(coords)):
-                new_marks[coords].add(number)
+        for coords, marks in marked_board.iter_box(box_coords):
+            if (not self._in_house(coords) and
+                self.number not in marked_board[coords]):
+                new_marks[coords].add(self.number)
         return new_marks
 
-    @staticmethod
-    def _in_box(coords, box):
-        return (box[0] == coords[0] // 3) and (box[1] == coords[1] // 3)
+    def _in_house(self, coords):
+        return {
+            "row": coords[0] == self.house_idx,
+            "column": coords[1] == self.house_idx
+        }[self.house_name]
        
     @property
     def box_coords(self):

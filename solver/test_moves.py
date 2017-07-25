@@ -164,7 +164,7 @@ class TestIntersectionTrickClaiming(unittest.TestCase):
         })
         it = IntersectionTrickClaiming.search(mb)
         self.assertEqual(it, 
-            IntersectionTrickClaiming("row", 1, 0, 1))
+            IntersectionTrickClaiming("row", 0, 1, 1))
 
 class TestNakedDouble(unittest.TestCase):
 

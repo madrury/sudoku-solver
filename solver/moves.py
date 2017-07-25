@@ -153,6 +153,7 @@ class HiddenSingle(AbstractMove, MoveMixin):
                 return hs
         return None
 
+    # TODO: This logic can be cleaned up.
     @staticmethod
     def _search_row(marked_board, already_found):
         for row_idx, number in product(range(9), range(1, 10)):
@@ -256,6 +257,7 @@ class IntersectionTrickPointing(AbstractMove, MoveMixin):
                     return it
         return None
 
+    # TODO: This logic can be cleaned up.
     def compute_marks(self, marked_board):
         if self.house == "row":
             return self._compute_marks_row(marked_board)
@@ -289,6 +291,76 @@ class IntersectionTrickPointing(AbstractMove, MoveMixin):
             
     def __hash__(self):
         return hash((self.box, self.house, self.idx, self.number))
+
+
+class IntersectionTrickClaiming(AbstractMove, MoveMixin):
+    """TODO
+    """
+    def __init__(self, house_name, house_idx, box_idx, number):
+        self.house_name = house_name
+        self.house_idx = house_idx
+        self.box_idx = box_idx
+        self.number = number
+
+    @staticmethod
+    def search(marked_board, already_found=None):
+        search_params = [
+            ("row", marked_board.iter_boxes_in_row),
+            ("column", marked_board.iter_boxes_in_column)
+        ]
+        for search_param in search_params:
+            it = IntersectionTrickClaiming._search(
+                marked_board, already_found, *search_params)
+            if it:
+                return it
+        return None
+
+    @staticmethod
+    def _search(marked_board, box_coords, already_found, house_name, iterator):
+        for house_idx, number in product(range(9), range(1, 10)):
+            possible_in_box_intersection = [
+                any(number not in marks for marks in box_intersection)
+                for box_intersection in iterator(house_idx)]
+            if sum(possible_in_box_intersection) == 1:
+                box_idx = possible_in_box_intersection.index(True)
+                it = IntersectionTrickClaiming(
+                    house_name = house_name,
+                    house_idx = house_idx,
+                    box_idx = box_idx,
+                    number = number)
+                new_marks = it.compute_marks(marked_board)
+                if new_marks and (not already_found or nd not in already_found):
+                    return it
+        return None
+
+    def compute_marks(self, marked_board):
+        new_marks = defaultdict(set)
+        box_coords = self.box_coords
+        iterator = {
+            "row": marked_board.iter_row(self.house_idx),
+            "column": marked_board.iter_column(self.house_idx)
+        }[self.house_name]
+        for coords, marks in iterator:
+            if (not IntersectionTrickClaiming._in_box(coords, box_coords) and
+                number not in marked_board(coords)):
+                new_marks[coords].add(number)
+        return new_marks
+
+    @staticmethod
+    def _in_box(coords, box):
+        return (box[0] == coords[0] // 3) and (box[1] == coords[1] // 3)
+       
+    @property
+    def box_coords(self):
+        box_row, box_column = {
+            "row": (self.house_idx // 3, self.box_idx),
+            "column": (self.box_idx, self.house_idx // 3)
+        }[self.house_name]
+        return (box_row, box_column)
+
+    def __hash__(self):
+        return hash((self.house_name, self.house_idx,
+                     self.box_idx, self.number))
 
 
 class NakedDouble(AbstractMove, MoveMixin): 

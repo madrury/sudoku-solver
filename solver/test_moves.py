@@ -166,6 +166,15 @@ class TestIntersectionTrickClaiming(unittest.TestCase):
         self.assertEqual(it, 
             IntersectionTrickClaiming("row", 0, 1, 1))
 
+    def test_intersection_trick_column(self):
+        gb, mb = new_boards({
+            (0, 0): 2, (1, 0): 3, (2, 0): 4,
+            (6, 0): 5, (7, 0): 6, (8, 0): 7,
+        })
+        it = IntersectionTrickClaiming.search(mb)
+        self.assertEqual(it, 
+            IntersectionTrickClaiming("column", 0, 1, 1))
+
 class TestNakedDouble(unittest.TestCase):
 
     def test_naked_double_row(self):

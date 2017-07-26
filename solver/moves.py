@@ -13,16 +13,24 @@ class AbstractMove(metaclass=abc.ABCMeta):
     """An abstract base class for moves used in solving a sudoku board.
 
     A move is an atomic piece of logic that updates the state of a game board
-    or marked board based on some deterministic, deductive logic.
+    or marked board based on some deterministic, deductive rule.
+ 
+    A move object has two roles:
+      1) Serve as a representation of a single example of such a move. Contains
+      data for how the marks resulting from such a move should be applied.
+      2) Serve as a namespace for methods related to that move. Most
+      fundamentally, algorithms for searching for, and computing the
+      consequences of a move.
 
-    Methods that must be implemented by a Move object
-    --------------------------------------------------
+    Methods that a move object must implement:
 
-    - search: Scan a marked board for a move of the given type. If one is
-      found, return the move.
-    - apply: Apply a move to a game board and marked board, filling in entries
-      and eliminating possiblities as appropriate.
-    - __eq__
+    - search: 
+      Scan a marked board for a move of the given type. If one is found, return
+      an object representing the object.
+    - compute_marks: Compute the new marks resulting from the application of a
+      move to a board and/or marked board.
+    -__hash__: Compute a hash value for a board. Useful for storing moves in
+      sets.
     """
     @staticmethod
     @abc.abstractmethod
@@ -40,10 +48,8 @@ class AbstractMove(metaclass=abc.ABCMeta):
 class MoveMixin:
     """Methods in common to all move objects.
 
-    This is contains serialization and printing methods. Move objects are
-    essentially data containers with a few static methods, so these can be
-    safely assimilated in one place.
-    """ 
+    This is contains serialization and printing methods.
+    """
     def to_dict(self):
         dct = deepcopy(self.__dict__)
         dct['name'] = self.__class__.__name__
@@ -75,21 +81,17 @@ class MoveMixin:
 
 
 class Finished(AbstractMove, MoveMixin):
-    """
-    Represents the finished move, returned when a board is completely solved.
+    """Represents the finished move, returned when a board is completely
+    solved.
     """
     def search(marked_board, already_found=None):
-        """Check that the marked board is fully solved.
-
-        Simply checks that all cells have full marks.
-        """
         for (i, j), marks in marked_board.iter_board():
             if marks != MarkedBoard.all_marks:
                 return None
         return Finished()
 
     def compute_marks(self, marked_board):
-        pass
+        return defaultdict(set)
 
     def __hash__(self):
         return 0
@@ -98,12 +100,22 @@ class Finished(AbstractMove, MoveMixin):
 class NakedSingle(AbstractMove, MoveMixin):
     """A naked single move.
 
-    This is the most basic sudoku move. A naked single is when a cell can only
-    possibly be filled with one number (all other possibilities have been
+    This is the most basic sudoku move. A naked single is found when a cell can
+    only possibly be filled with one number (all other possibilities have been
     eliminated).
     
     This is one of only two moves that can fill in a number in the board, the
     other is a hidden single.
+
+    Attributes
+    ----------
+      - coords: The coordinates of the cell with the naked single.
+      - number: The only number that can appear in the given cell.
+
+    Resulting Marks
+    ---------------
+    Results in adding the number to the marks of every cell sharing the same
+    row, column, or box with the naked single.
     """
     def __init__(self, coords, number):
         self.coords = coords
@@ -130,16 +142,27 @@ class NakedSingle(AbstractMove, MoveMixin):
 class HiddenSingle(AbstractMove, MoveMixin):
     """A hidden single move.
 
-    The second most basic sudoku move. A hidden single is when a house (row,
-    column, or box) has exaclty one cell that can old a given number, as the
-    number has been eliminated from all other cells in the house.
+    A hidden single is when a house (row, column, or box) has exaclty one cell
+    that can hold a given number, as the number has been eliminated from all
+    other cells in the house.
 
     This is one of only two moves that can fill a number in the board, the
     other is a naked single.
+
+    Attributes
+    ----------
+      - coords: The coordinates of the cell with the hidden single.
+      - house_name: The name of the house contining the hidden single.
+      - number: The number that must appear in the given cell.
+
+    Resulting Marks
+    ---------------
+    Results in adding the number to the marks of every cell sharing the same
+    row, column, or box with the naked single.
     """
-    def __init__(self, coords, house, number):
+    def __init__(self, coords, house_name, number):
         self.coords = coords
-        self.house = house
+        self.house_name = house_name
         self.number = number
 
     @staticmethod
@@ -191,7 +214,7 @@ class HiddenSingle(AbstractMove, MoveMixin):
                    self.coords, self.number)
 
     def __hash__(self):
-        return hash((self.coords, self.number, self.house))
+        return hash((self.coords, self.number, self.house_name))
 
 
 class IntersectionTrickPointing(AbstractMove, MoveMixin):

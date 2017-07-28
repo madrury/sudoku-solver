@@ -346,7 +346,7 @@ class IntersectionTrickClaiming(AbstractMove, MoveMixin):
 
     Attributes
     ----------
-      - house_name: The type of house that intersects with the box, row or
+      - house_type: The type of house that intersects with the box, row or
         column.
       - house_idx: The index of the row or column that intersects with the box.
       - box_idx: The index of the box *within* the row, 0, 1, or 2.
@@ -360,8 +360,8 @@ class IntersectionTrickClaiming(AbstractMove, MoveMixin):
     The claiming intersection trick does not place any numbers in the game
     board, it only places marks.
     """
-    def __init__(self, house_name, house_idx, box_idx, number):
-        self.house_name = house_name
+    def __init__(self, house_type, house_idx, box_idx, number):
+        self.house_type = house_type
         self.house_idx = house_idx
         self.box_idx = box_idx
         self.number = number
@@ -380,7 +380,7 @@ class IntersectionTrickClaiming(AbstractMove, MoveMixin):
         return None
 
     @staticmethod
-    def _search(marked_board, already_found, house_name, iterator):
+    def _search(marked_board, already_found, house_type, iterator):
         for house_idx, number in product(range(9), range(1, 10)):
             possible_in_box_intersection = [
                 any(number not in marks for marks in box_intersection)
@@ -388,7 +388,7 @@ class IntersectionTrickClaiming(AbstractMove, MoveMixin):
             if sum(possible_in_box_intersection) == 1:
                 box_idx = possible_in_box_intersection.index(True)
                 it = IntersectionTrickClaiming(
-                    house_name = house_name,
+                    house_type = house_type,
                     house_idx = house_idx,
                     box_idx = box_idx,
                     number = number)
@@ -410,18 +410,18 @@ class IntersectionTrickClaiming(AbstractMove, MoveMixin):
         return {
             "row": coords[0] == self.house_idx,
             "column": coords[1] == self.house_idx
-        }[self.house_name]
+        }[self.house_type]
        
     @property
     def box_coords(self):
         box_row, box_column = {
             "row": (self.house_idx // 3, self.box_idx),
             "column": (self.box_idx, self.house_idx // 3)
-        }[self.house_name]
+        }[self.house_type]
         return (box_row, box_column)
 
     def __hash__(self):
-        return hash((self.house_name, self.house_idx,
+        return hash((self.house_type, self.house_idx,
                      self.box_idx, self.number))
 
 

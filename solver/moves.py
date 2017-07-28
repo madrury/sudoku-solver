@@ -233,32 +233,17 @@ class IntersectionTrickPointing(AbstractMove, MoveMixin):
     @staticmethod
     def search(marked_board, already_found=None):
         for box_coords in product(range(3), range(3)):
-            it_in_row = IntersectionTrickPointing._search(
-                marked_board, box_coords, already_found, "row")
-            if it_in_row:
-                return it_in_row
-            it_in_column = IntersectionTrickPointing._search(
-                marked_board, box_coords, already_found, "column")
-            if it_in_column:
-                return it_in_column
+            for house_type in ["row", "column"]:
+                it = IntersectionTrickPointing._search(
+                    house_type, marked_board, box_coords, already_found)
+                if it:
+                    return it
         return None
 
     @staticmethod
-    def _search(marked_board, box_coords, already_found, house_type):
-        if house_type == "row":
-            # The inner lists represent rows in both of these data structures.
-            houses_in_box = [
-                [marked_board[(i, j)] 
-                    for j in range(3*box_coords[1], 3*box_coords[1] + 3)]
-                for i in range(3*box_coords[0], 3*box_coords[0] + 3)]
-        elif house_type == "column":
-            # The inner lists represent columns in both of these data structures.
-            houses_in_box = [
-                [marked_board[(i, j)] 
-                    for i in range(3*box_coords[0], 3*box_coords[0] + 3)]
-                for j in range(3*box_coords[1], 3*box_coords[1] + 3)]
-        else:
-            raise ValueError("house_type must be 'row' or 'column'")
+    def _search(house_type, marked_board, box_coords, already_found):
+        houses_in_box = IntersectionTrickPointing._make_houses_in_box(
+            marked_board, box_coords, house_type)
         for number in range(1, 10):
             possible_in_intersection = [
                 any(number not in marks for marks in house)
@@ -275,29 +260,35 @@ class IntersectionTrickPointing(AbstractMove, MoveMixin):
                     return it
         return None
 
+    def _make_houses_in_box(marked_board, box_coords, house_type):
+        if house_type == "row":
+            # The inner lists represent rows in both of these data structures.
+            return [
+                [marked_board[(i, j)] 
+                    for j in range(3*box_coords[1], 3*box_coords[1] + 3)]
+                for i in range(3*box_coords[0], 3*box_coords[0] + 3)]
+        elif house_type == "column":
+            # The inner lists represent columns in both of these data structures.
+            return [
+                [marked_board[(i, j)] 
+                    for i in range(3*box_coords[0], 3*box_coords[0] + 3)]
+                for j in range(3*box_coords[1], 3*box_coords[1] + 3)]
+        else:
+            raise ValueError("house_type must be 'row' or 'column'")
+
     # TODO: This logic can be cleaned up.
     def compute_marks(self, marked_board):
-        if self.house_type == "row":
-            return self._compute_marks_row(marked_board)
-        elif self.house_type == "column":
-            return self._compute_marks_column(marked_board)
-        else:
-            raise RuntimeError("House in IntersectionTrickPointing.apply must"
-                "be row or column.")
+        compute_params = {
+            "row": (0, lambda p: (p[1], p[0])),
+            "column": (1, lambda p: p)
+        }[self.house_type]
+        return self._compute_marks(marked_board, *compute_params)
 
-    def _compute_marks_row(self, marked_board):
+    def _compute_marks(self, marked_board, idx, maybe_transpose):
         new_marks = defaultdict(set)
-        for column_idx in range(9):
-            coords = (3*self.box[0] + self.house_idx, column_idx)
-            if (not self.number in marked_board[coords] and 
-                not IntersectionTrickPointing._in_box(coords, self.box)):
-                new_marks[coords].add(self.number)
-        return new_marks
-
-    def _compute_marks_column(self, marked_board):
-        new_marks = defaultdict(set)
-        for row_idx in range(9):
-            coords = (row_idx, 3*self.box[1] + self.house_idx)
+        for house_idx in range(9):
+            coords = maybe_transpose((house_idx,
+                                      3*self.box[idx] + self.house_idx))
             if (not self.number in marked_board[coords] and 
                 not IntersectionTrickPointing._in_box(coords, self.box)):
                 new_marks[coords].add(self.number)

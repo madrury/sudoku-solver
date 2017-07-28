@@ -4,7 +4,7 @@ from copy import deepcopy
 from itertools import product, combinations, chain
 from collections import defaultdict
 from boards import GameBoard, MarkedBoard
-from utils import pairs_exclude_diagonal 
+from utils import unzip, pairs_exclude_diagonal 
 
 
 FULL_MARKS = {1, 2, 3, 4, 5, 6, 7, 8, 9}
@@ -152,7 +152,7 @@ class HiddenSingle(AbstractMove, MoveMixin):
     Attributes
     ----------
       - coords: The coordinates of the cell with the hidden single.
-      - house_name: The name of the house contining the hidden single.
+      - house_type: The name of the house contining the hidden single.
       - number: The number that must appear in the given cell.
 
     Resulting Marks
@@ -160,53 +160,32 @@ class HiddenSingle(AbstractMove, MoveMixin):
     Results in adding the number to the marks of every cell sharing the same
     row, column, or box with the naked single.
     """
-    def __init__(self, coords, house_name, number):
+    def __init__(self, coords, house_type, number):
         self.coords = coords
-        self.house_name = house_name
+        self.house_type = house_type
         self.number = number
 
     @staticmethod
     def search(marked_board, already_found=None):
-        searchers = [HiddenSingle._search_row,
-                     HiddenSingle._search_column,
-                     HiddenSingle._search_box]
-        for searcher in searchers:
-            hs = searcher(marked_board, already_found)
+        search_params = [
+            ("row", range(9), marked_board.iter_row),
+            ("column", range(9), marked_board.iter_column),
+            ("box", product(range(3), range(3)), marked_board.iter_box)
+        ]
+        for search_param in search_params:
+            hs = HiddenSingle._search(marked_board, *search_param)
             if hs:
                 return hs
         return None
 
-    # TODO: This logic can be cleaned up.
-    @staticmethod
-    def _search_row(marked_board, already_found):
-        for row_idx, number in product(range(9), range(1, 10)):
-            is_marked = [number in marks 
-                         for _, marks in marked_board.iter_row(row_idx)]
+    def _search(marked_board, house_type, house_idx_iter, house_iter):
+        for house_idx, number in product(house_idx_iter, range(1, 10)):
+            coords_for_house, marks_for_house = unzip(list(house_iter(house_idx)))
+            is_marked = [number in marks for marks in marks_for_house]
             if sum(is_marked) == 8:
-                column_idx = is_marked.index(False)
-                return HiddenSingle((row_idx, column_idx), 'row', number)
-        return None
-
-    @staticmethod
-    def _search_column(marked_board, already_found):
-        for column_idx, number in product(range(9), range(1, 10)):
-            is_marked = [number in marks
-                         for _, marks in marked_board.iter_column(column_idx)]
-            if sum(is_marked) == 8:
-                row_idx = is_marked.index(False)
-                return HiddenSingle((row_idx, column_idx), 'column', number)
-        return None
-
-    @staticmethod
-    def _search_box(marked_board, already_found):
-        for box_idxs, number in product(product(range(3), range(3)), range(1, 10)):
-            is_marked = [number in marks
-                         for _, marks in marked_board.iter_box(box_idxs)]
-            if sum(is_marked) == 8:
-                local_box_idx = is_marked.index(False)
-                row_idx, column_idx = (3*box_idxs[0] + local_box_idx // 3,
-                                       3*box_idxs[1] + local_box_idx % 3)
-                return HiddenSingle((row_idx, column_idx), 'box', number)
+                idx = is_marked.index(False)
+                coords = coords_for_house[idx]
+                return HiddenSingle(coords, house_type, number)
         return None
 
     def compute_marks(self, marked_board):
@@ -214,7 +193,7 @@ class HiddenSingle(AbstractMove, MoveMixin):
                    self.coords, self.number)
 
     def __hash__(self):
-        return hash((self.coords, self.number, self.house_name))
+        return hash((self.coords, self.number, self.house_type))
 
 
 class IntersectionTrickPointing(AbstractMove, MoveMixin):

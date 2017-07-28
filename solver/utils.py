@@ -6,3 +6,6 @@ def pairs_exclude_diagonal(it):
     for x, y in product(it, repeat=2):
         if x != y:
             yield (x, y)
+
+def unzip(lst):
+    return zip(*lst)

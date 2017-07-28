@@ -218,23 +218,37 @@ class HiddenSingle(AbstractMove, MoveMixin):
 
 
 class IntersectionTrickPointing(AbstractMove, MoveMixin):
-    """An intersection trick move.
+    """An pointing intersection trick move.
 
-    An intersection trick is found when the following two conditions are
-    satisfied:
-        - A number is available to be placed in that box.
-        - The number can only be placed inside the intersection of a single row
-          or column in that box.
-    Consequently, that number *cannot* be placed in any other cell in the same
-    row or column.
+    An pointing intersection trick is found when the following two conditions
+    are satisfied:
 
-    The intersection trick does not place any numbers in the game board, it
-    only places marks.
+      1) A number is available to be placed in that box.
+      2) The number can only be placed inside the intersection of a single row
+      or column in that box.  
+      3) The number, a prori, can be placed in at least one other place in the
+      intersecting row or column.
+
+    Attributes
+    ----------
+      - box: The coordinates of the box in which the move is found.
+      - house_type: The type of house that intersects with the box.
+      - house_idx: The index of the intersection house *within* the box. A
+        number 0, 1, or 2. 
+      - number: The number that can only be placed in the intersection.
+
+    Resulting Marks
+    ---------------
+    Results in marking the given number in every cell in the intersecting row
+    or column that does *not* lie within the box.
+
+    The pointing intersection trick does not place any numbers in the game
+    board, it only places marks.
     """
-    def __init__(self, box, house, idx, number):
+    def __init__(self, box, house_type, house_idx, number):
         self.box = box
-        self.house = house
-        self.idx = idx
+        self.house_type = house_type
+        self.house_idx = house_idx
         self.number = number
 
     @staticmethod
@@ -251,21 +265,21 @@ class IntersectionTrickPointing(AbstractMove, MoveMixin):
         return None
 
     @staticmethod
-    def _search(marked_board, box_coords, already_found, house):
-        if house == "row":
+    def _search(marked_board, box_coords, already_found, house_type):
+        if house_type == "row":
             # The inner lists represent rows in both of these data structures.
             houses_in_box = [
                 [marked_board[(i, j)] 
                     for j in range(3*box_coords[1], 3*box_coords[1] + 3)]
                 for i in range(3*box_coords[0], 3*box_coords[0] + 3)]
-        elif house == "column":
+        elif house_type == "column":
             # The inner lists represent columns in both of these data structures.
             houses_in_box = [
                 [marked_board[(i, j)] 
                     for i in range(3*box_coords[0], 3*box_coords[0] + 3)]
                 for j in range(3*box_coords[1], 3*box_coords[1] + 3)]
         else:
-            raise ValueError("house must be 'row' or 'column'")
+            raise ValueError("house_type must be 'row' or 'column'")
         for number in range(1, 10):
             possible_in_intersection = [
                 any(number not in marks for marks in house)
@@ -273,8 +287,10 @@ class IntersectionTrickPointing(AbstractMove, MoveMixin):
             if sum(possible_in_intersection) == 1:
                 intersection_house = possible_in_intersection.index(True)
                 it = IntersectionTrickPointing(
-                    box=box_coords, house=house,
-                    idx=intersection_house, number=number)
+                    box=box_coords,
+                    house_type=house_type,
+                    house_idx=intersection_house,
+                    number=number)
                 new_marks = it.compute_marks(marked_board)
                 if new_marks and (not already_found or it not in already_found):
                     return it
@@ -282,9 +298,9 @@ class IntersectionTrickPointing(AbstractMove, MoveMixin):
 
     # TODO: This logic can be cleaned up.
     def compute_marks(self, marked_board):
-        if self.house == "row":
+        if self.house_type == "row":
             return self._compute_marks_row(marked_board)
-        elif self.house == "column":
+        elif self.house_type == "column":
             return self._compute_marks_column(marked_board)
         else:
             raise RuntimeError("House in IntersectionTrickPointing.apply must"
@@ -293,7 +309,7 @@ class IntersectionTrickPointing(AbstractMove, MoveMixin):
     def _compute_marks_row(self, marked_board):
         new_marks = defaultdict(set)
         for column_idx in range(9):
-            coords = (3*self.box[0] + self.idx, column_idx)
+            coords = (3*self.box[0] + self.house_idx, column_idx)
             if (not self.number in marked_board[coords] and 
                 not IntersectionTrickPointing._in_box(coords, self.box)):
                 new_marks[coords].add(self.number)
@@ -302,7 +318,7 @@ class IntersectionTrickPointing(AbstractMove, MoveMixin):
     def _compute_marks_column(self, marked_board):
         new_marks = defaultdict(set)
         for row_idx in range(9):
-            coords = (row_idx, 3*self.box[1] + self.idx)
+            coords = (row_idx, 3*self.box[1] + self.house_idx)
             if (not self.number in marked_board[coords] and 
                 not IntersectionTrickPointing._in_box(coords, self.box)):
                 new_marks[coords].add(self.number)

@@ -329,11 +329,36 @@ class IntersectionTrickPointing(AbstractMove, MoveMixin):
         return (box[0] == coords[0] // 3) and (box[1] == coords[1] // 3)
             
     def __hash__(self):
-        return hash((self.box, self.house, self.idx, self.number))
+        return hash((self.box, self.house_type, self.house_idx, self.number))
 
 
 class IntersectionTrickClaiming(AbstractMove, MoveMixin):
-    """TODO
+    """An claiming intersection trick move.
+
+    A claiming intersection trick is found when the following conditions are
+    satisfied.
+
+    1) A number can be placed in a given row or column.
+    2) The only place a number can be placed in a given row or column is in the
+    intersection with some box.
+    3) The number can, a prori, be placed in at least one place in that box
+    outside of the intersecting house.
+
+    Attributes
+    ----------
+      - house_name: The type of house that intersects with the box, row or
+        column.
+      - house_idx: The index of the row or column that intersects with the box.
+      - box_idx: The index of the box *within* the row, 0, 1, or 2.
+      - number: The number that can only be placed in the intersection.
+
+    Resulting Marks
+    ---------------
+    Results in marking the given number in every cell in the intersecting box
+    that does *not* lie within the intersection house.
+
+    The claiming intersection trick does not place any numbers in the game
+    board, it only places marks.
     """
     def __init__(self, house_name, house_idx, box_idx, number):
         self.house_name = house_name

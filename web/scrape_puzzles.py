@@ -32,7 +32,7 @@ def scrape_puzzles(base_url, level, n):
         html = requests.get(url, params=params, headers=headers).content
         puzzle = scrape_puzzle_data(html)
         data.append(puzzle)
-        time.sleep(random.uniform(1, 2*60)) 
+        time.sleep(random.uniform(30, 4*60)) 
     return data
 
 def scrape_puzzle_data(html):

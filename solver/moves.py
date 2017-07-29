@@ -4,7 +4,7 @@ from copy import deepcopy
 from itertools import product, combinations, chain
 from collections import defaultdict
 from boards import GameBoard, MarkedBoard
-from utils import unzip, pairs_exclude_diagonal 
+from utils import unzip, all_empty, pairs_exclude_diagonal 
 
 
 FULL_MARKS = {1, 2, 3, 4, 5, 6, 7, 8, 9}
@@ -256,7 +256,8 @@ class IntersectionTrickPointing(AbstractMove, MoveMixin):
                     house_idx=intersection_house,
                     number=number)
                 new_marks = it.compute_marks(marked_board)
-                if new_marks and (not already_found or it not in already_found):
+                if (not all_empty(new_marks) and 
+                    (not already_found or it not in already_found)):
                     return it
         return None
 
@@ -276,7 +277,6 @@ class IntersectionTrickPointing(AbstractMove, MoveMixin):
         else:
             raise ValueError("house_type must be 'row' or 'column'")
 
-    # TODO: This logic can be cleaned up.
     def compute_marks(self, marked_board):
         compute_params = {
             "row": (0, lambda p: (p[1], p[0])),
@@ -363,7 +363,8 @@ class IntersectionTrickClaiming(AbstractMove, MoveMixin):
                     box_idx = box_idx,
                     number = number)
                 new_marks = it.compute_marks(marked_board)
-                if new_marks and (not already_found or nd not in already_found):
+                if (not all_empty(new_marks) and 
+                    (not already_found or it not in already_found)):
                     return it
         return None
 
@@ -399,13 +400,16 @@ class NakedDouble(AbstractMove, MoveMixin):
     """A naked double move.
 
     A naked double occurs in a house when there are only two cells in that
-    house capable of holding any two numbers.  This allows these possibilities
+    house capable of holding an set of two numbers.  
+    
+    
+    This allows these possibilities
     to be eliminated from all other cells in that house.
 
     A naked double does not place any number on the game board, only marks.
     """
-    def __init__(self, house, house_idx, double_idxs, numbers):
-        self.house = house
+    def __init__(self, house_type, house_idx, double_idxs, numbers):
+        self.house_type = house_type
         self.house_idx = house_idx
         self.double_idxs = double_idxs
         self.numbers = set(numbers)
@@ -424,19 +428,20 @@ class NakedDouble(AbstractMove, MoveMixin):
         return None
 
     @staticmethod
-    def _search(marked_board, already_found, house_name,
+    def _search(marked_board, already_found, house_type,
                 house_iter, house_idx_iter):
         for house_idx in house_idx_iter:
             traverse_twice = pairs_exclude_diagonal(house_iter(house_idx))
             for (coords1, marks1), (coords2, marks2) in traverse_twice:
                 if len(marks1) == 7 and len(marks2) == 7 and marks1 == marks2:
                     numbers = list(FULL_MARKS - marks1)
-                    nd = NakedDouble(house=house_name,
+                    nd = NakedDouble(house_type=house_type,
                                      house_idx=house_idx,
                                      double_idxs=(coords1, coords2),
                                      numbers=numbers)
                     new_marks = nd.compute_marks(marked_board)
-                    if new_marks and (not already_found or nd not in already_found):
+                    if (not all_empty(new_marks) and 
+                        (not already_found or nd not in already_found)):
                         return nd
         return None
 
@@ -446,12 +451,11 @@ class NakedDouble(AbstractMove, MoveMixin):
             'row': marked_board.iter_row,
             'column': marked_board.iter_column,
             'box': marked_board.iter_box
-        }[self.house]
+        }[self.house_type]
         for coords, marks in iterator(self.house_idx):
             if coords not in self.double_idxs:
-                for number in self.numbers:
-                    if number not in marked_board[coords]:
-                        new_marks[coords].add(number)
+                added_marks = self.numbers - marked_board[coords]
+                new_marks[coords].update(added_marks)
         return new_marks
 
     def __hash__(self):

@@ -9,3 +9,6 @@ def pairs_exclude_diagonal(it):
 
 def unzip(lst):
     return zip(*lst)
+
+def all_empty(dict_of_sets):
+    return all(s == set() for s in dict_of_sets.values())

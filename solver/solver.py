@@ -4,6 +4,7 @@ from boards import GameBoard, MarkedBoard
 from moves import (Finished,
                    NakedSingle, HiddenSingle,
                    IntersectionTrickPointing,
+                   IntersectionTrickClaiming,
                    NakedDouble)
 
 
@@ -17,6 +18,7 @@ class Solver:
              NakedSingle, 
              HiddenSingle,
              IntersectionTrickPointing,
+             IntersectionTrickClaiming,
              NakedDouble]
 
     def __init__(self, game_board):
@@ -52,7 +54,8 @@ class Solution(list):
         'Finished': Finished,
         'NakedSingle': NakedSingle,
         'HiddenSingle': HiddenSingle,
-        'IntersectionTrick': IntersectionTrickPointing,
+        'IntersectionTrickPointing': IntersectionTrickPointing,
+        'IntersectionTrickClaiming': IntersectionTrickClaiming,
         'NakedDouble': NakedDouble
     }
 

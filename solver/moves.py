@@ -459,5 +459,5 @@ class NakedDouble(AbstractMove, MoveMixin):
         return new_marks
 
     def __hash__(self):
-        return hash((self.house, self.house_idx, 
+        return hash((self.house_type, self.house_idx, 
                     self.double_idxs, tuple(sorted(self.numbers))))

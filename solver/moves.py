@@ -9,6 +9,7 @@ from utils import unzip, all_empty, pairs_exclude_diagonal
 
 FULL_MARKS = {1, 2, 3, 4, 5, 6, 7, 8, 9}
 
+
 class AbstractMove(metaclass=abc.ABCMeta):
     """An abstract base class for moves used in solving a sudoku board.
 
@@ -464,3 +465,22 @@ class NakedDouble(AbstractMove, MoveMixin):
     def __hash__(self):
         return hash((self.house_type, self.house_idx, 
                     self.double_idxs, tuple(sorted(self.numbers))))
+
+
+MOVES_ORDER = [
+    Finished,
+    NakedSingle, 
+    HiddenSingle,
+    IntersectionTrickPointing,
+    IntersectionTrickClaiming,
+    NakedDouble
+]
+
+MOVES_DICT = {
+    'Finished': Finished,
+    'NakedSingle': NakedSingle,
+    'HiddenSingle': HiddenSingle,
+    'IntersectionTrickPointing': IntersectionTrickPointing,
+    'IntersectionTrickClaiming': IntersectionTrickClaiming,
+    'NakedDouble': NakedDouble
+}

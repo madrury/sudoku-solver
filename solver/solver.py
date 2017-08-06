@@ -1,7 +1,9 @@
 import copy
 import json
+from enum import IntEnum
 from boards import GameBoard, MarkedBoard
-from moves import (Finished,
+from moves import (MOVES_ORDER, MOVES_DICT,
+                   Finished,
                    NakedSingle, HiddenSingle,
                    IntersectionTrickPointing,
                    IntersectionTrickClaiming,
@@ -14,12 +16,6 @@ class NotSolvableException(RuntimeError):
 
 class Solver:
 
-    moves = [Finished,
-             NakedSingle, 
-             HiddenSingle,
-             IntersectionTrickPointing,
-             IntersectionTrickClaiming,
-             NakedDouble]
 
     def __init__(self, game_board):
         self.game_board = copy.deepcopy(game_board)
@@ -28,7 +24,7 @@ class Solver:
         self.solution = Solution()
 
     def find_next_move(self):
-        for move in Solver.moves:
+        for move in MOVES_ORDER:
             mv, new_marks = move.search(
                 self.marked_board, already_found=self.found_moves)
             if mv:
@@ -49,20 +45,17 @@ class Solver:
         return self.solution
 
 
-class Solution(object):
-
-    moves_dict = {
-        'Finished': Finished,
-        'NakedSingle': NakedSingle,
-        'HiddenSingle': HiddenSingle,
-        'IntersectionTrickPointing': IntersectionTrickPointing,
-        'IntersectionTrickClaiming': IntersectionTrickClaiming,
-        'NakedDouble': NakedDouble
-    }
+class Solution:
 
     def __init__(self):
         self.moves = []
         self.marks = []
+
+    def iter_moves(self):
+        yield from self.moves
+
+    def iter_marks(self):
+        yield from self.marks
 
     def to_json(self):
         return '[' + ','.join(move.to_json() for move in self.moves) + ']' 
@@ -73,5 +66,5 @@ class Solution(object):
         moves = json.loads(jsn)
         for move in moves:
             move_name = move['name']
-            sln.moves.append(cls.moves_dict[move_name].from_dict(move))
+            sln.moves.append(MOVES_DICT[move_name].from_dict(move))
         return sln

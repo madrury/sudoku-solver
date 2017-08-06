@@ -87,8 +87,8 @@ class Finished(AbstractMove, MoveMixin):
     def search(marked_board, already_found=None):
         for (i, j), marks in marked_board.iter_board():
             if marks != MarkedBoard.all_marks:
-                return None
-        return Finished()
+                return None, None
+        return Finished(), None
 
     def compute_marks(self, marked_board):
         return defaultdict(set)
@@ -128,8 +128,10 @@ class NakedSingle(AbstractMove, MoveMixin):
             missing_marks = MarkedBoard.all_marks - marks
             if len(missing_marks) == 1:
                 number = next(iter(missing_marks))
-                return NakedSingle(coords=(i, j), number=number)
-        return None
+                ns = NakedSingle(coords=(i, j), number=number)
+                new_marks = ns.compute_marks(marked_board)
+                return ns, new_marks
+        return None, None
 
     def compute_marks(self, marked_board):
         return marked_board.compute_marks_from_placed_number(
@@ -175,8 +177,8 @@ class HiddenSingle(AbstractMove, MoveMixin):
         for search_param in search_params:
             hs = HiddenSingle._search(marked_board, *search_param)
             if hs:
-                return hs
-        return None
+                return hs, hs.compute_marks(marked_board)
+        return None, None
 
     def _search(marked_board, house_type, house_idx_iter, house_iter):
         for house_idx, number in product(house_idx_iter, range(1, 10)):
@@ -234,11 +236,11 @@ class IntersectionTrickPointing(AbstractMove, MoveMixin):
     def search(marked_board, already_found=None):
         for box_coords in product(range(3), range(3)):
             for house_type in ["row", "column"]:
-                it = IntersectionTrickPointing._search(
+                it, new_marks = IntersectionTrickPointing._search(
                     house_type, marked_board, box_coords, already_found)
                 if it:
-                    return it
-        return None
+                    return it, new_marks
+        return None, None
 
     @staticmethod
     def _search(house_type, marked_board, box_coords, already_found):
@@ -258,8 +260,8 @@ class IntersectionTrickPointing(AbstractMove, MoveMixin):
                 new_marks = it.compute_marks(marked_board)
                 if (not all_empty(new_marks) and 
                     (not already_found or it not in already_found)):
-                    return it
-        return None
+                    return it, new_marks
+        return None, None
 
     def _make_houses_in_box(marked_board, box_coords, house_type):
         if house_type == "row":
@@ -343,11 +345,11 @@ class IntersectionTrickClaiming(AbstractMove, MoveMixin):
             ("column", marked_board.iter_boxes_in_column)
         ]
         for search_param in search_params:
-            it = IntersectionTrickClaiming._search(
+            it, new_marks = IntersectionTrickClaiming._search(
                 marked_board, already_found, *search_param)
             if it:
-                return it
-        return None
+                return it, new_marks
+        return None, None
 
     @staticmethod
     def _search(marked_board, already_found, house_type, iterator):
@@ -365,8 +367,8 @@ class IntersectionTrickClaiming(AbstractMove, MoveMixin):
                 new_marks = it.compute_marks(marked_board)
                 if (not all_empty(new_marks) and 
                     (not already_found or it not in already_found)):
-                    return it
-        return None
+                    return it, new_marks
+        return None, None
 
     def compute_marks(self, marked_board):
         new_marks = defaultdict(set)
@@ -422,10 +424,11 @@ class NakedDouble(AbstractMove, MoveMixin):
             ("box", marked_board.iter_box, product(range(3), range(3)))
         ]
         for search_param in search_params:
-            nd = NakedDouble._search(marked_board, already_found, *search_param)
+            nd, new_marks = NakedDouble._search(
+                marked_board, already_found, *search_param)
             if nd:
-                return nd
-        return None
+                return nd, new_marks
+        return None, None
 
     @staticmethod
     def _search(marked_board, already_found, house_type,
@@ -442,8 +445,8 @@ class NakedDouble(AbstractMove, MoveMixin):
                     new_marks = nd.compute_marks(marked_board)
                     if (not all_empty(new_marks) and 
                         (not already_found or nd not in already_found)):
-                        return nd
-        return None
+                        return nd, new_marks
+        return None, None
 
     def compute_marks(self, marked_board):
         new_marks = defaultdict(set)

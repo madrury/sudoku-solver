@@ -29,26 +29,27 @@ class Solver:
 
     def find_next_move(self):
         for move in Solver.moves:
-            mv = move.search(self.marked_board, already_found=self.found_moves)
+            mv, new_marks = move.search(
+                self.marked_board, already_found=self.found_moves)
             if mv:
-                return mv
+                return mv, new_marks
         raise NotSolvableException("Board is not solvable with current moveset")
 
     def solve(self):
         while True:
-            mv = self.find_next_move()
+            mv, marks = self.find_next_move()
             if isinstance(mv, Finished):
-                self.solution.append(mv)
+                self.solution.moves.append(mv)
                 return self.solution
             else:
-                marks = mv.compute_marks(self.marked_board)
                 self.marked_board.add_marks(marks)
-                self.solution.append(mv)
-                self.found_moves.add(mv)                
+                self.found_moves.add(mv)         
+                self.solution.moves.append(mv)
+                self.solution.marks.append(marks)
         return self.solution
 
 
-class Solution(list):
+class Solution(object):
 
     moves_dict = {
         'Finished': Finished,
@@ -59,8 +60,12 @@ class Solution(list):
         'NakedDouble': NakedDouble
     }
 
+    def __init__(self):
+        self.moves = []
+        self.marks = []
+
     def to_json(self):
-        return '[' + ','.join(move.to_json() for move in self) + ']' 
+        return '[' + ','.join(move.to_json() for move in self.moves) + ']' 
 
     @classmethod
     def from_json(cls, jsn):
@@ -68,5 +73,5 @@ class Solution(list):
         moves = json.loads(jsn)
         for move in moves:
             move_name = move['name']
-            sln.append(cls.moves_dict[move_name].from_dict(move))
+            sln.moves.append(cls.moves_dict[move_name].from_dict(move))
         return sln

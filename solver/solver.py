@@ -16,7 +16,6 @@ class NotSolvableException(RuntimeError):
 
 class Solver:
 
-
     def __init__(self, game_board):
         self.game_board = copy.deepcopy(game_board)
         self.marked_board = MarkedBoard.from_game_board(game_board)

@@ -518,7 +518,7 @@ class HiddenDouble(AbstractMove, MoveMixin):
                 for coords, marks in marked_board.iter_row(row_idx)]
             n2_coords, n2_possible = [
                 (coords, n2 not in marks)
-                forcoords, marks in marked_board.iter_row(row_idx)]
+                for coords, marks in marked_board.iter_row(row_idx)]
             if (sum(n1_possible) == 7 and sum(n2_possible) == 7
                 and n1_possible == n2_possible):
                 double_coords = HiddenDouble._compute_double_coords(
@@ -535,10 +535,10 @@ class HiddenDouble(AbstractMove, MoveMixin):
     def compute_marks(self, marked_board):
         return defaultdict(set, {
             self.double_idxs[0]: (
-                (FULL_MARKS - marked_board[self.double_idxs[0]) - self.numbers),
+                (FULL_MARKS - marked_board[self.double_idxs[0]]) - self.numbers),
             self.double_idxs[1]: (
-                (FULL_MARKS - marked_board[self.double_idxs[1]) - self.numbers)
-        }
+                (FULL_MARKS - marked_board[self.double_idxs[1]]) - self.numbers)
+        })
 
     def __hash__(self):
         return hash((self.house_type, self.house_idx, 

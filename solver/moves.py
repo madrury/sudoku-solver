@@ -404,12 +404,23 @@ class NakedDouble(AbstractMove, MoveMixin):
 
     A naked double occurs in a house when there are only two cells in that
     house capable of holding an set of two numbers.  
-    
-    
-    This allows these possibilities
-    to be eliminated from all other cells in that house.
 
-    A naked double does not place any number on the game board, only marks.
+    Attributes
+    ----------
+      - house_type: The type of house in which the double is found, row,
+        column, or box.
+      - house_idx: The index of the house in which the double in round.  This
+        is an integer in range(9) for a row or column, and is a pair in
+        (range(3), range(3)) if a box.
+      - double_idxs: A pair of coordinates, the two cells in which the double
+        is found.
+      - numbers: A set of two numbers from range(9), the two numbers that are
+        only capable in the two cells.
+    
+    Resulting Marks
+    ---------------
+    The two numbers are added within every cell in the house that is not one of
+    the two cells composing the double.
     """
     def __init__(self, house_type, house_idx, double_idxs, numbers):
         self.house_type = house_type
@@ -466,6 +477,7 @@ class NakedDouble(AbstractMove, MoveMixin):
         return hash((self.house_type, self.house_idx, 
                     self.double_idxs, tuple(sorted(self.numbers))))
 
+class HiddenDouble(AbstractMove, MoveMixin): 
 
 MOVES_ORDER = [
     Finished,

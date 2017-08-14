@@ -478,6 +478,72 @@ class NakedDouble(AbstractMove, MoveMixin):
                     self.double_idxs, tuple(sorted(self.numbers))))
 
 class HiddenDouble(AbstractMove, MoveMixin): 
+    """A hidden double move.
+
+    A naked double occurs in a house when there are two numbers that are only
+    capable of being placed in two of the cells within that house.
+
+    Attributes
+    ----------
+      - house_type: The type of house in which the double is found, row,
+        column, or box.
+      - house_idx: The index of the house in which the double in round.  This
+        is an integer in range(9) for a row or column, and is a pair in
+        (range(3), range(3)) if a box.
+      - double_idxs: A pair of coordinates, the two cells in which the double
+        is found.
+      - numbers: A set of two numbers from range(9), the two numbers that are
+        capable of being placed only in the two cells.
+    
+    Resulting Marks
+    ---------------
+    All other numbers are placed as marks in teh two cells constituting the
+    double.
+    """
+    def __init__(self, house_type, house_idx, double_idxs, numbers):
+        self.house_type = house_type
+        self.house_idx = house_idx
+        self.double_idxs = double_idxs
+        self.numbers = set(numbers)
+
+    @staticmethod
+    def search(marked_board, already_found=None):
+        return HiddenDouble._search_rows(marked_board, already_found)
+
+    @staticmethod
+    def _search_rows(marked_board, already_found=None):
+        for row_idx, (n1, n2) in product(range(9), iter_number_pairs):
+            n1_coords, n1_possible = [
+                (coords, n1 not in marks)
+                for coords, marks in marked_board.iter_row(row_idx)]
+            n2_coords, n2_possible = [
+                (coords, n2 not in marks)
+                forcoords, marks in marked_board.iter_row(row_idx)]
+            if (sum(n1_possible) == 7 and sum(n2_possible) == 7
+                and n1_possible == n2_possible):
+                double_coords = HiddenDouble._compute_double_coords(
+                    n1_coods, n1_possible)
+                hd = HiddenDouble(house_type="row",
+                                    house_idx=row_idx,
+                                    double_idxs=double_coords,
+                                    numbers={n1, n2})
+                new_marks = hd.compute_marks(marked_board)
+                if (not all_empty(new_marks) and 
+                    (not already_found or hd not in already_found)):
+                    return hd, new_marks
+
+    def compute_marks(self, marked_board):
+        return defaultdict(set, {
+            self.double_idxs[0]: (
+                (FULL_MARKS - marked_board[self.double_idxs[0]) - self.numbers),
+            self.double_idxs[1]: (
+                (FULL_MARKS - marked_board[self.double_idxs[1]) - self.numbers)
+        }
+
+    def __hash__(self):
+        return hash((self.house_type, self.house_idx, 
+                    self.double_idxs, tuple(sorted(self.numbers))))
+
 
 MOVES_ORDER = [
     Finished,

@@ -163,25 +163,24 @@ class TestIntersectionTrickPointing(TestMove):
         IntersectionTrickPointing((1, 1), "column", 0, 1))
 
 
-#class TestIntersectionTrickClaiming(unittest.TestCase):
-#
-#    def test_intersection_trick_row(self):
-#        gb, mb = new_boards({
-#            (0, 0): 2, (0, 1): 3, (0, 2): 4,
-#            (0, 6): 5, (0, 7): 6, (0, 8): 7,
-#        })
-#        it = IntersectionTrickClaiming.search(mb)
-#        self.assertEqual(it, 
-#            IntersectionTrickClaiming("row", 0, 1, 1))
-#
-#    def test_intersection_trick_column(self):
-#        gb, mb = new_boards({
-#            (0, 0): 2, (1, 0): 3, (2, 0): 4,
-#            (6, 0): 5, (7, 0): 6, (8, 0): 7,
-#        })
-#        it = IntersectionTrickClaiming.search(mb)
-#        self.assertEqual(it, 
-#            IntersectionTrickClaiming("column", 0, 1, 1))
+class TestIntersectionTrickClaiming(TestMove):
+
+    def test_intersection_trick_row(self):
+        self.check_move({
+            (0, 0): 2, (0, 1): 3, (0, 2): 4,
+            (0, 6): 5, (0, 7): 6, (0, 8): 7,
+        },
+        IntersectionTrickClaiming,
+        IntersectionTrickClaiming("row", 0, 1, 1))
+
+    def test_intersection_trick_column(self):
+        self.check_move({
+            (0, 0): 2, (1, 0): 3, (2, 0): 4,
+            (6, 0): 5, (7, 0): 6, (8, 0): 7,
+        },
+        IntersectionTrickClaiming,
+        IntersectionTrickClaiming("column", 0, 1, 1))
+
 #
 #class TestNakedDouble(unittest.TestCase):
 #

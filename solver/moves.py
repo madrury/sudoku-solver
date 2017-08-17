@@ -4,7 +4,7 @@ from copy import deepcopy
 from itertools import product, combinations, chain
 from collections import defaultdict
 from boards import GameBoard, MarkedBoard
-from utils import unzip, all_empty, pairs_exclude_diagonal 
+from utils import unzip, all_empty, pairs_exclude_diagonal, iter_number_pairs
 
 
 FULL_MARKS = {1, 2, 3, 4, 5, 6, 7, 8, 9}
@@ -512,25 +512,36 @@ class HiddenDouble(AbstractMove, MoveMixin):
 
     @staticmethod
     def _search_rows(marked_board, already_found=None):
-        for row_idx, (n1, n2) in product(range(9), iter_number_pairs):
-            n1_coords, n1_possible = [
+        for row_idx, (n1, n2) in product(range(9), iter_number_pairs()):
+            n1_coords, n1_possible = zip(*[
                 (coords, n1 not in marks)
-                for coords, marks in marked_board.iter_row(row_idx)]
-            n2_coords, n2_possible = [
+                for coords, marks in marked_board.iter_row(row_idx)])
+            n2_coords, n2_possible = zip(*[
                 (coords, n2 not in marks)
-                for coords, marks in marked_board.iter_row(row_idx)]
-            if (sum(n1_possible) == 7 and sum(n2_possible) == 7
+                for coords, marks in marked_board.iter_row(row_idx)])
+            if (sum(n1_possible) == 2 and sum(n2_possible) == 2
                 and n1_possible == n2_possible):
                 double_coords = HiddenDouble._compute_double_coords(
-                    n1_coods, n1_possible)
+                    n1_coords, n1_possible)
                 hd = HiddenDouble(house_type="row",
                                     house_idx=row_idx,
                                     double_idxs=double_coords,
-                                    numbers={n1, n2})
+                                    numbers=(n1, n2))
+                print("Found:", hd)
                 new_marks = hd.compute_marks(marked_board)
                 if (not all_empty(new_marks) and 
                     (not already_found or hd not in already_found)):
                     return hd, new_marks
+        return None, None
+
+    @staticmethod
+    def _compute_double_coords(coords, possible):
+        double_coords = []
+        for coord, poss in zip(coords, possible):
+            if poss:
+                double_coords.append(coord)
+        return tuple(double_coords)
+            
 
     def compute_marks(self, marked_board):
         return defaultdict(set, {

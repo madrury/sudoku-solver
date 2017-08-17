@@ -2,7 +2,7 @@ from boards import GameBoard, MarkedBoard
 from moves import (NakedSingle, HiddenSingle,
                    IntersectionTrickPointing, 
                    IntersectionTrickClaiming,
-                   NakedDouble)
+                   NakedDouble, HiddenDouble)
 import unittest
 
 
@@ -225,6 +225,19 @@ class TestNakedDouble(TestMove):
         },
         NakedDouble,
         None)
+
+
+class TestHiddenDouble(TestMove):
+
+    def test_hidden_double(self):
+        self.check_move({
+            (0, 6): 3, (0, 7): 4, (0, 8): 5,
+            (1, 3): 1, (1, 4): 2,
+            (6, 1): 1,
+            (7, 1): 2
+        },
+        HiddenDouble,
+        HiddenDouble("row", 0, ((0, 0), (0, 2)), (1, 2)))
 
 
 if __name__ == '__main__':

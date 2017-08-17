@@ -181,53 +181,50 @@ class TestIntersectionTrickClaiming(TestMove):
         IntersectionTrickClaiming,
         IntersectionTrickClaiming("column", 0, 1, 1))
 
-#
-#class TestNakedDouble(unittest.TestCase):
-#
-#    def test_naked_double_row(self):
-#        gb, mb = new_boards({
-#            (0, 0): 3, (0, 1): 4, (0, 2): 5,
-#            (1, 0): 6, (1, 6): 7, (1, 7): 8, (1, 8): 9
-#        })
-#        nd = NakedDouble.search(mb)
-#        self.assertEqual(nd, 
-#            NakedDouble("row", 1, ((1, 1), (1, 2)), (1, 2)))
-#
-#    def test_naked_double_column(self):
-#        gb, mb = new_boards({
-#            (0, 0): 3, (0, 1): 6,
-#            (1, 0): 4, 
-#            (2, 0): 5,
-#            (6, 1): 7, 
-#            (7, 1): 8, 
-#            (8, 1): 9
-#        })
-#        nd = NakedDouble.search(mb)
-#        self.assertEqual(nd, 
-#            NakedDouble("column", 1, ((1, 1), (2, 1)), (1, 2)))
-#
-#    def test_naked_double_box(self):
-#        gb, mb = new_boards({
-#            (0, 0): 3, (0, 1): 4, (0, 6): 8, (0, 7): 9,
-#            (1, 0): 5, (1, 1): 6, (1, 6): 1,
-#            (2, 2): 7,
-#            (6, 0): 8,
-#            (7, 0): 9, (7, 1): 2
-#        })
-#        nd = NakedDouble.search(mb)
-#        self.assertEqual(nd, 
-#            NakedDouble("box", (0, 0), ((0, 2), (2, 0)), (1, 2)))
-#
-#    def test_naked_double_box_no_move(self):
-#        gb, mb = new_boards({
-#            (0, 0): 3, (0, 1): 4, (0, 6): 8, (0, 7): 9,
-#            (1, 0): 5, (1, 1): 6, (1, 6): 1, (1, 7): 2,
-#            (2, 2): 7,
-#            (6, 0): 8, (6, 1): 1,
-#            (7, 0): 9, (7, 1): 2
-#        })
-#        nd = NakedDouble.search(mb)
-#        self.assertEqual(nd, None)
+
+class TestNakedDouble(TestMove):
+
+    def test_naked_double_row(self):
+        self.check_move({
+            (0, 0): 3, (0, 1): 4, (0, 2): 5,
+            (1, 0): 6, (1, 6): 7, (1, 7): 8, (1, 8): 9
+        },
+        NakedDouble,
+        NakedDouble("row", 1, ((1, 1), (1, 2)), (1, 2)))
+
+    def test_naked_double_column(self):
+        self.check_move({
+            (0, 0): 3, (0, 1): 6,
+            (1, 0): 4, 
+            (2, 0): 5,
+            (6, 1): 7, 
+            (7, 1): 8, 
+            (8, 1): 9
+        },
+        NakedDouble,
+        NakedDouble("column", 1, ((1, 1), (2, 1)), (1, 2)))
+
+    def test_naked_double_box(self):
+        self.check_move({
+            (0, 0): 3, (0, 1): 4, (0, 6): 8, (0, 7): 9,
+            (1, 0): 5, (1, 1): 6, (1, 6): 1,
+            (2, 2): 7,
+            (6, 0): 8,
+            (7, 0): 9, (7, 1): 2
+        },
+        NakedDouble,
+        NakedDouble("box", (0, 0), ((0, 2), (2, 0)), (1, 2)))
+
+    def test_naked_double_box_no_move(self):
+        self.check_move({
+            (0, 0): 3, (0, 1): 4, (0, 6): 8, (0, 7): 9,
+            (1, 0): 5, (1, 1): 6, (1, 6): 1, (1, 7): 2,
+            (2, 2): 7,
+            (6, 0): 8, (6, 1): 1,
+            (7, 0): 9, (7, 1): 2
+        },
+        NakedDouble,
+        None)
 
 
 if __name__ == '__main__':

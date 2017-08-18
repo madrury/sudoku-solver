@@ -50,3 +50,15 @@ class DifficultyVector:
         difficulties = list(self)
         n_moves = len(difficulties)
         ax.plot(list(range(n_moves)), difficulties, **kwargs)
+
+
+def calculate_sigmoid_difficulty(solution):
+    dv = list(DifficultyVector(solution))
+    return dv[-1]
+
+def calculate_move_vector(solution):
+    mv = list(MoveVector(solution))
+    final_moves = mv[-1]
+    return {move.__name__:
+               final_moves[MOVES_ORDER.index(move)]
+            for move in MOVES_ORDER}

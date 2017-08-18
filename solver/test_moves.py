@@ -16,11 +16,11 @@ def new_boards(data):
 
 class TestMove(unittest.TestCase):
 
-    # Cannot name this "test_move".
     def check_move(self, board_dict, move_class,
                    result_move=None, result_marks=None):
         gb, mb = new_boards(board_dict)
         move, marks = move_class.search(mb)
+        # print(move)
         if result_move:
             self.assertEqual(move, result_move)
         if result_marks:
@@ -229,7 +229,7 @@ class TestNakedDouble(TestMove):
 
 class TestHiddenDouble(TestMove):
 
-    def test_hidden_double(self):
+    def test_hidden_double_row(self):
         self.check_move({
             (0, 6): 3, (0, 7): 4, (0, 8): 5,
             (1, 3): 1, (1, 4): 2,
@@ -238,6 +238,47 @@ class TestHiddenDouble(TestMove):
         },
         HiddenDouble,
         HiddenDouble("row", 0, ((0, 0), (0, 2)), (1, 2)))
+
+    def test_hidden_double_row_2(self):
+        self.check_move({
+            (0, 0): 1, (0, 8): 1,
+            (1, 0): 2, (1, 8): 2,
+            (4, 1): 3, (4, 7): 4,
+            (5, 3): 1, (5, 4): 2
+        },
+        HiddenDouble,
+        HiddenDouble("row", 4, ((4, 2), (4, 6)), (1, 2)))
+
+    def test_hidden_double_column(self):
+        self.check_move({
+            (6, 0): 3, (7, 0): 4, (8, 0): 5,
+            (3, 1): 1, (4, 1): 2,
+            (1, 6): 1,
+            (1, 7): 2
+        },
+        HiddenDouble,
+        HiddenDouble("column", 0, ((0, 0), (2, 0)), (1, 2)))
+
+    def test_hidden_double_column_2(self):
+        self.check_move({
+            (0, 0): 1, (8, 0): 1,
+            (0, 1): 2, (8, 1): 2,
+            (1, 4): 3, (7, 4): 4,
+            (3, 5): 1, (4, 5): 2
+        },
+        HiddenDouble,
+        HiddenDouble("column", 4, ((2, 4), (6, 4)), (1, 2)))
+
+    def test_hidden_double_box(self):
+        self.check_move({
+            (0, 6): 1, (0, 7): 2,
+            (1, 1): 3,
+            (2, 2): 4,
+            (6, 0): 1,
+            (7, 0): 2
+        },
+        HiddenDouble,
+        HiddenDouble("box", (0, 0), ((1, 2), (2, 1)), (1, 2)))
 
 
 if __name__ == '__main__':

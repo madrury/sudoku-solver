@@ -1,13 +1,7 @@
 import copy
 import json
-from enum import IntEnum
-from boards import GameBoard, MarkedBoard
-from moves import (MOVES_ORDER, MOVES_DICT,
-                   Finished,
-                   NakedSingle, HiddenSingle,
-                   IntersectionTrickPointing,
-                   IntersectionTrickClaiming,
-                   NakedDouble)
+from boards import MarkedBoard
+from moves import MOVES_ORDER, MOVES_DICT, Finished
 
 
 class NotSolvableException(RuntimeError):

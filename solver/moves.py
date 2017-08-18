@@ -572,7 +572,8 @@ MOVES_ORDER = [
     HiddenSingle,
     IntersectionTrickPointing,
     IntersectionTrickClaiming,
-    NakedDouble
+    NakedDouble,
+    HiddenDouble
 ]
 
 MOVES_DICT = {
@@ -581,5 +582,6 @@ MOVES_DICT = {
     'HiddenSingle': HiddenSingle,
     'IntersectionTrickPointing': IntersectionTrickPointing,
     'IntersectionTrickClaiming': IntersectionTrickClaiming,
-    'NakedDouble': NakedDouble
+    'NakedDouble': NakedDouble,
+    'HidenDouble': HiddenDouble
 }

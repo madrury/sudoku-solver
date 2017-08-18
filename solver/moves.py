@@ -508,26 +508,36 @@ class HiddenDouble(AbstractMove, MoveMixin):
 
     @staticmethod
     def search(marked_board, already_found=None):
-        return HiddenDouble._search_rows(marked_board, already_found)
+        search_params = [
+            ("row", marked_board.iter_row, range(9)),
+            ("column", marked_board.iter_column, range(9)),
+            ("box", marked_board.iter_box, product(range(3), range(3)))
+        ]
+        for search_param in search_params:
+            hd, new_marks = HiddenDouble._search(
+                marked_board, already_found, *search_param)
+            if hd:
+                return hd, new_marks
+        return None, None
 
     @staticmethod
-    def _search_rows(marked_board, already_found=None):
-        for row_idx, (n1, n2) in product(range(9), iter_number_pairs()):
+    def _search(marked_board, already_found,
+                house_type, house_iter, house_idx_iter):
+        for house_idx, (n1, n2) in product(house_idx_iter, iter_number_pairs()):
             n1_coords, n1_possible = zip(*[
                 (coords, n1 not in marks)
-                for coords, marks in marked_board.iter_row(row_idx)])
+                for coords, marks in house_iter(house_idx)])
             n2_coords, n2_possible = zip(*[
                 (coords, n2 not in marks)
-                for coords, marks in marked_board.iter_row(row_idx)])
+                for coords, marks in house_iter(house_idx)])
             if (sum(n1_possible) == 2 and sum(n2_possible) == 2
                 and n1_possible == n2_possible):
                 double_coords = HiddenDouble._compute_double_coords(
                     n1_coords, n1_possible)
-                hd = HiddenDouble(house_type="row",
-                                    house_idx=row_idx,
-                                    double_idxs=double_coords,
-                                    numbers=(n1, n2))
-                print("Found:", hd)
+                hd = HiddenDouble(house_type=house_type,
+                                  house_idx=house_idx,
+                                  double_idxs=double_coords,
+                                  numbers=(n1, n2))
                 new_marks = hd.compute_marks(marked_board)
                 if (not all_empty(new_marks) and 
                     (not already_found or hd not in already_found)):

@@ -1,10 +1,11 @@
 import abc
 import json
 from copy import deepcopy
-from itertools import product, combinations, chain
+from itertools import product
 from collections import defaultdict
-from boards import GameBoard, MarkedBoard
-from utils import unzip, all_empty, pairs_exclude_diagonal, iter_number_pairs
+
+from sudoku.boards import MarkedBoard
+from sudoku.utils import unzip, all_empty, pairs_exclude_diagonal, iter_number_pairs
 
 
 FULL_MARKS = {1, 2, 3, 4, 5, 6, 7, 8, 9}
@@ -15,7 +16,7 @@ class AbstractMove(metaclass=abc.ABCMeta):
 
     A move is an atomic piece of logic that updates the state of a game board
     or marked board based on some deterministic, deductive rule.
- 
+
     A move object has two roles:
       1) Serve as a representation of a single example of such a move. Contains
       data for how the marks resulting from such a move should be applied.
@@ -25,7 +26,7 @@ class AbstractMove(metaclass=abc.ABCMeta):
 
     Methods that a move object must implement:
 
-    - search: 
+    - search:
       Scan a marked board for a move of the given type. If one is found, return
       an object representing the object.
     - compute_marks: Compute the new marks resulting from the application of a
@@ -55,7 +56,7 @@ class MoveMixin:
         dct = deepcopy(self.__dict__)
         dct['name'] = self.__class__.__name__
         return dct
-    
+
     @classmethod
     def from_dict(cls, dct):
         d = deepcopy(dct)
@@ -104,7 +105,7 @@ class NakedSingle(AbstractMove, MoveMixin):
     This is the most basic sudoku move. A naked single is found when a cell can
     only possibly be filled with one number (all other possibilities have been
     eliminated).
-    
+
     This is one of only two moves that can fill in a number in the board, the
     other is a hidden single.
 
@@ -207,7 +208,7 @@ class IntersectionTrickPointing(AbstractMove, MoveMixin):
 
       1) A number is available to be placed in that box.
       2) The number can only be placed inside the intersection of a single row
-      or column in that box.  
+      or column in that box.
       3) The number, a prori, can be placed in at least one other place in the
       intersecting row or column.
 
@@ -216,7 +217,7 @@ class IntersectionTrickPointing(AbstractMove, MoveMixin):
       - box: The coordinates of the box in which the move is found.
       - house_type: The type of house that intersects with the box.
       - house_idx: The index of the intersection house *within* the box. A
-        number 0, 1, or 2. 
+        number 0, 1, or 2.
       - number: The number that can only be placed in the intersection.
 
     Resulting Marks
@@ -259,7 +260,7 @@ class IntersectionTrickPointing(AbstractMove, MoveMixin):
                     house_idx=intersection_house,
                     number=number)
                 new_marks = it.compute_marks(marked_board)
-                if (not all_empty(new_marks) and 
+                if (not all_empty(new_marks) and
                     (not already_found or it not in already_found)):
                     return it, new_marks
         return None, None
@@ -268,13 +269,13 @@ class IntersectionTrickPointing(AbstractMove, MoveMixin):
         if house_type == "row":
             # The inner lists represent rows in both of these data structures.
             return [
-                [marked_board[(i, j)] 
+                [marked_board[(i, j)]
                     for j in range(3*box_coords[1], 3*box_coords[1] + 3)]
                 for i in range(3*box_coords[0], 3*box_coords[0] + 3)]
         elif house_type == "column":
             # The inner lists represent columns in both of these data structures.
             return [
-                [marked_board[(i, j)] 
+                [marked_board[(i, j)]
                     for i in range(3*box_coords[0], 3*box_coords[0] + 3)]
                 for j in range(3*box_coords[1], 3*box_coords[1] + 3)]
         else:
@@ -292,7 +293,7 @@ class IntersectionTrickPointing(AbstractMove, MoveMixin):
         for house_idx in range(9):
             coords = maybe_transpose((house_idx,
                                       3*self.box[idx] + self.house_idx))
-            if (not self.number in marked_board[coords] and 
+            if (not self.number in marked_board[coords] and
                 not IntersectionTrickPointing._in_box(coords, self.box)):
                 new_marks[coords].add(self.number)
         return new_marks
@@ -300,7 +301,7 @@ class IntersectionTrickPointing(AbstractMove, MoveMixin):
     @staticmethod
     def _in_box(coords, box):
         return (box[0] == coords[0] // 3) and (box[1] == coords[1] // 3)
-            
+
     def __hash__(self):
         return hash((self.box, self.house_type, self.house_idx, self.number))
 
@@ -366,7 +367,7 @@ class IntersectionTrickClaiming(AbstractMove, MoveMixin):
                     box_idx = box_idx,
                     number = number)
                 new_marks = it.compute_marks(marked_board)
-                if (not all_empty(new_marks) and 
+                if (not all_empty(new_marks) and
                     (not already_found or it not in already_found)):
                     return it, new_marks
         return None, None
@@ -385,7 +386,7 @@ class IntersectionTrickClaiming(AbstractMove, MoveMixin):
             "row": coords[0] == self.house_idx,
             "column": coords[1] == self.house_idx
         }[self.house_type]
-       
+
     @property
     def box_coords(self):
         box_row, box_column = {
@@ -399,11 +400,11 @@ class IntersectionTrickClaiming(AbstractMove, MoveMixin):
                      self.box_idx, self.number))
 
 
-class NakedDouble(AbstractMove, MoveMixin): 
+class NakedDouble(AbstractMove, MoveMixin):
     """A naked double move.
 
     A naked double occurs in a house when there are only two cells in that
-    house capable of holding an set of two numbers.  
+    house capable of holding an set of two numbers.
 
     Attributes
     ----------
@@ -416,7 +417,7 @@ class NakedDouble(AbstractMove, MoveMixin):
         is found.
       - numbers: A set of two numbers from range(9), the two numbers that are
         only capable in the two cells.
-    
+
     Resulting Marks
     ---------------
     The two numbers are added within every cell in the house that is not one of
@@ -455,7 +456,7 @@ class NakedDouble(AbstractMove, MoveMixin):
                                      double_idxs=(coords1, coords2),
                                      numbers=numbers)
                     new_marks = nd.compute_marks(marked_board)
-                    if (not all_empty(new_marks) and 
+                    if (not all_empty(new_marks) and
                         (not already_found or nd not in already_found)):
                         return nd, new_marks
         return None, None
@@ -474,10 +475,10 @@ class NakedDouble(AbstractMove, MoveMixin):
         return new_marks
 
     def __hash__(self):
-        return hash((self.house_type, self.house_idx, 
+        return hash((self.house_type, self.house_idx,
                     self.double_idxs, tuple(sorted(self.numbers))))
 
-class HiddenDouble(AbstractMove, MoveMixin): 
+class HiddenDouble(AbstractMove, MoveMixin):
     """A hidden double move.
 
     A naked double occurs in a house when there are two numbers that are only
@@ -494,7 +495,7 @@ class HiddenDouble(AbstractMove, MoveMixin):
         is found.
       - numbers: A set of two numbers from range(9), the two numbers that are
         capable of being placed only in the two cells.
-    
+
     Resulting Marks
     ---------------
     All other numbers are placed as marks in teh two cells constituting the
@@ -539,7 +540,7 @@ class HiddenDouble(AbstractMove, MoveMixin):
                                   double_idxs=double_coords,
                                   numbers=(n1, n2))
                 new_marks = hd.compute_marks(marked_board)
-                if (not all_empty(new_marks) and 
+                if (not all_empty(new_marks) and
                     (not already_found or hd not in already_found)):
                     return hd, new_marks
         return None, None
@@ -551,7 +552,7 @@ class HiddenDouble(AbstractMove, MoveMixin):
             if poss:
                 double_coords.append(coord)
         return tuple(double_coords)
-            
+
 
     def compute_marks(self, marked_board):
         return defaultdict(set, {
@@ -562,13 +563,13 @@ class HiddenDouble(AbstractMove, MoveMixin):
         })
 
     def __hash__(self):
-        return hash((self.house_type, self.house_idx, 
+        return hash((self.house_type, self.house_idx,
                     self.double_idxs, tuple(sorted(self.numbers))))
 
 
 MOVES_ORDER = [
     Finished,
-    NakedSingle, 
+    NakedSingle,
     HiddenSingle,
     IntersectionTrickPointing,
     IntersectionTrickClaiming,

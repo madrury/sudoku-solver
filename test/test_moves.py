@@ -1,6 +1,6 @@
-from boards import GameBoard, MarkedBoard
-from moves import (NakedSingle, HiddenSingle,
-                   IntersectionTrickPointing, 
+from sudoku.boards import GameBoard, MarkedBoard
+from sudoku.moves import (NakedSingle, HiddenSingle,
+                   IntersectionTrickPointing,
                    IntersectionTrickClaiming,
                    NakedDouble, HiddenDouble)
 import unittest
@@ -41,7 +41,7 @@ class TestNakedSingle(TestMove):
 
     def test_naked_single_box(self):
         self.check_move({
-                       (0, 1): 2, (0, 2): 3, 
+                       (0, 1): 2, (0, 2): 3,
             (1, 0): 4, (1, 1): 5, (1, 2): 6,
             (2, 0): 7, (2, 1): 8, (2, 2): 9
         },
@@ -195,10 +195,10 @@ class TestNakedDouble(TestMove):
     def test_naked_double_column(self):
         self.check_move({
             (0, 0): 3, (0, 1): 6,
-            (1, 0): 4, 
+            (1, 0): 4,
             (2, 0): 5,
-            (6, 1): 7, 
-            (7, 1): 8, 
+            (6, 1): 7,
+            (7, 1): 8,
             (8, 1): 9
         },
         NakedDouble,

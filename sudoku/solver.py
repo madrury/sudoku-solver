@@ -1,7 +1,8 @@
 import copy
 import json
-from boards import MarkedBoard
-from moves import MOVES_ORDER, MOVES_DICT, Finished
+
+from sudoku.boards import MarkedBoard
+from sudoku.moves import MOVES_ORDER, MOVES_DICT, Finished
 
 
 class NotSolvableException(RuntimeError):
@@ -32,7 +33,7 @@ class Solver:
                 return self.solution
             else:
                 self.marked_board.add_marks(marks)
-                self.found_moves.add(mv)         
+                self.found_moves.add(mv)
                 self.solution.moves.append(mv)
                 self.solution.marks.append(marks)
         return self.solution
@@ -51,7 +52,7 @@ class Solution:
         yield from self.marks
 
     def to_json(self):
-        return '[' + ','.join(move.to_json() for move in self.moves) + ']' 
+        return '[' + ','.join(move.to_json() for move in self.moves) + ']'
 
     @classmethod
     def from_json(cls, jsn):

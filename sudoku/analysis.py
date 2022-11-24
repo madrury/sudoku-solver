@@ -1,4 +1,4 @@
-from moves import (MOVES_ORDER, MOVES_DICT,
+from sudoku.moves import (MOVES_ORDER, MOVES_DICT,
                    Finished,
                    NakedSingle, HiddenSingle,
                    IntersectionTrickPointing,
@@ -14,7 +14,7 @@ class MoveVector:
 
     def __init__(self, solution):
         self.solution = solution
-    
+
     @staticmethod
     def empty_move_vector():
         return [0 for _ in MOVES_ORDER]
@@ -42,7 +42,7 @@ class DifficultyVector:
 
     def __iter__(self):
         yield from (
-            1 + sum(sigmoid(move_count) for move_count in move_vector[2:]) 
+            1 + sum(sigmoid(move_count) for move_count in move_vector[2:])
                     for move_vector in self.move_vector
         )
 

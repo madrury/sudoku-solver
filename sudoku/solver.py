@@ -10,7 +10,6 @@ class NotSolvableException(RuntimeError):
 
 
 class Solver:
-
     def __init__(self, game_board):
         self.game_board = copy.deepcopy(game_board)
         self.marked_board = MarkedBoard.from_game_board(game_board)
@@ -20,7 +19,8 @@ class Solver:
     def find_next_move(self):
         for move in MOVES_ORDER:
             mv, new_marks = move.search(
-                self.marked_board, already_found=self.found_moves)
+                self.marked_board, already_found=self.found_moves
+            )
             if mv:
                 return mv, new_marks
         raise NotSolvableException("Board is not solvable with current moveset")
@@ -40,7 +40,6 @@ class Solver:
 
 
 class Solution:
-
     def __init__(self):
         self.moves = []
         self.marks = []
@@ -52,13 +51,13 @@ class Solution:
         yield from self.marks
 
     def to_json(self):
-        return '[' + ','.join(move.to_json() for move in self.moves) + ']'
+        return "[" + ",".join(move.to_json() for move in self.moves) + "]"
 
     @classmethod
     def from_json(cls, jsn):
         sln = cls()
         moves = json.loads(jsn)
         for move in moves:
-            move_name = move['name']
+            move_name = move["name"]
             sln.moves.append(MOVES_DICT[move_name].from_dict(move))
         return sln

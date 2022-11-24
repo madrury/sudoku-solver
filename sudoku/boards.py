@@ -2,12 +2,14 @@ import json
 from itertools import product, chain
 from collections import defaultdict
 
+
 class Board:
     """Base class for board objects.
 
     Contains methods commonly useful for dealing with a 9 by 9 array of
     objects - as of now, various methods for iteration.
     """
+
     def iter_board(self):
         for i, j in product(range(9), range(9)):
             yield (i, j), self[(i, j)]
@@ -21,8 +23,8 @@ class Board:
             yield (i, column), self[(i, column)]
 
     def iter_box(self, box):
-        for i in range(3*box[0], 3*box[0] + 3):
-            for j in range(3*box[1], 3*box[1] + 3):
+        for i in range(3 * box[0], 3 * box[0] + 3):
+            for j in range(3 * box[1], 3 * box[1] + 3):
                 yield (i, j), self[(i, j)]
 
     def iter_row_containing(self, coords):
@@ -40,12 +42,12 @@ class Board:
     def iter_boxes_in_row(self, row):
         row = [marks for _, marks in self.iter_row(row)]
         for i in range(3):
-            yield row[3*i: (3*i+3)]
+            yield row[3 * i : (3 * i + 3)]
 
     def iter_boxes_in_column(self, column):
         column = [marks for _, marks in self.iter_column(column)]
         for j in range(3):
-            yield column[3*j: (3*j+3)]
+            yield column[3 * j : (3 * j + 3)]
 
     def __getitem__(self, coords):
         return self.data[coords]
@@ -60,10 +62,9 @@ class GameBoard(Board):
     The data is stored in a dictionary, keys are tuples (i, j) in 1-9
     inclusive, and values are either a number 1-9 inclusive, or None.
     """
+
     def __init__(self):
-        self.data = {
-            (i, j): None for i in range(9) for j in range(9)
-        }
+        self.data = {(i, j): None for i in range(9) for j in range(9)}
         self.level = None
         self.id = None
 
@@ -97,12 +98,12 @@ class GameBoard(Board):
           - id: The unique identifier of the puzzle on websudoku.com.
         """
         board = cls()
-        for ij, (mask_bit, num) in enumerate(zip(dct['mask'], dct['puzzle'])):
+        for ij, (mask_bit, num) in enumerate(zip(dct["mask"], dct["puzzle"])):
             i, j = ij // 9, ij % 9
-            if mask_bit == '0':
+            if mask_bit == "0":
                 board[(i, j)] = int(num)
-        board.level = int(dct['level'])
-        board.id = dct['id']
+        board.level = int(dct["level"])
+        board.id = dct["id"]
         return board
 
     def __str__(self):
@@ -112,9 +113,9 @@ class GameBoard(Board):
         s = ""
         for i in range(9):
             if i % 3 == 0:
-                s += h_seperator + '\n'
-            row_tuple = tuple(num if num else ' ' for _, num in self.iter_row(i))
-            s += h_line.format(*row_tuple) + '\n'
+                s += h_seperator + "\n"
+            row_tuple = tuple(num if num else " " for _, num in self.iter_row(i))
+            s += h_line.format(*row_tuple) + "\n"
         s += h_seperator
         return s
 
@@ -128,12 +129,11 @@ class MarkedBoard(Board):
     these subsets, and its presense indicates that the given number *cannot* be
     placed in that cell in the solution to the puzzle.
     """
+
     all_marks = {1, 2, 3, 4, 5, 6, 7, 8, 9}
 
     def __init__(self):
-        self.data = {
-            (i, j): set() for i in range(9) for j in range(9)
-        }
+        self.data = {(i, j): set() for i in range(9) for j in range(9)}
         self.level = None
         self.id = None
 
@@ -163,9 +163,11 @@ class MarkedBoard(Board):
         # to the generators over the board.
         new_marks = defaultdict(set)
         new_marks[coords] = self.all_marks
-        placements = chain(self.iter_row_containing(coords),
-                           self.iter_column_containing(coords),
-                           self.iter_box_containing(coords))
+        placements = chain(
+            self.iter_row_containing(coords),
+            self.iter_column_containing(coords),
+            self.iter_box_containing(coords),
+        )
         for (i, j), _ in placements:
             new_marks[(i, j)].add(entry)
         return new_marks
@@ -180,9 +182,10 @@ class MarkedBoard(Board):
         s = ""
         for i in range(9):
             if i % 3 == 0:
-                s += h_seperator + '\n'
-            row_tuple = tuple('*' if number in marks else ' '
-                              for _, marks in self.iter_row(i))
-            s += h_line.format(*row_tuple) + '\n'
+                s += h_seperator + "\n"
+            row_tuple = tuple(
+                "*" if number in marks else " " for _, marks in self.iter_row(i)
+            )
+            s += h_line.format(*row_tuple) + "\n"
         s += h_seperator
         return s

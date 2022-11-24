@@ -1,9 +1,13 @@
-from sudoku.moves import (MOVES_ORDER, MOVES_DICT,
-                   Finished,
-                   NakedSingle, HiddenSingle,
-                   IntersectionTrickPointing,
-                   IntersectionTrickClaiming,
-                   NakedDouble)
+from sudoku.moves import (
+    MOVES_ORDER,
+    MOVES_DICT,
+    Finished,
+    NakedSingle,
+    HiddenSingle,
+    IntersectionTrickPointing,
+    IntersectionTrickClaiming,
+    NakedDouble,
+)
 
 
 def sigmoid(t):
@@ -11,7 +15,6 @@ def sigmoid(t):
 
 
 class MoveVector:
-
     def __init__(self, solution):
         self.solution = solution
 
@@ -30,20 +33,18 @@ class MoveVector:
         solution_vector = MoveVector.empty_move_vector()
         yield solution_vector
         for move in self.solution.iter_moves():
-            solution_vector = MoveVector.increment_from_move(
-                solution_vector, move)
+            solution_vector = MoveVector.increment_from_move(solution_vector, move)
             yield solution_vector
 
 
 class DifficultyVector:
-
     def __init__(self, solution):
         self.move_vector = MoveVector(solution)
 
     def __iter__(self):
         yield from (
             1 + sum(sigmoid(move_count) for move_count in move_vector[2:])
-                    for move_vector in self.move_vector
+            for move_vector in self.move_vector
         )
 
     def plot_difficulty_curve(self, ax, **kwargs):
@@ -56,9 +57,8 @@ def calculate_sigmoid_difficulty(solution):
     dv = list(DifficultyVector(solution))
     return dv[-1]
 
+
 def calculate_move_vector(solution):
     mv = list(MoveVector(solution))
     final_moves = mv[-1]
-    return {move.__name__:
-               final_moves[MOVES_ORDER.index(move)]
-            for move in MOVES_ORDER}
+    return {move.__name__: final_moves[MOVES_ORDER.index(move)] for move in MOVES_ORDER}

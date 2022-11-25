@@ -8,7 +8,7 @@ from collections import defaultdict
 from sudoku.boards import MarkedBoard
 from sudoku.utils import unzip, all_empty, pairs_exclude_diagonal, iter_number_pairs
 
-from typing import Generic, TypeVar, Iterable, List, Optional, Dict, Tuple, Set
+from typing import List, Optional, Dict, Tuple, Set, Union
 
 Coord = Tuple[int, int]
 BoxCoord = Tuple[int, int]
@@ -266,7 +266,7 @@ class IntersectionTrickPointing(Move, MoveIOMixin):
         return None
 
     @staticmethod
-    def _search(marked_board, house_type, box_coords, already_found):
+    def _search(marked_board: MarkedBoard, house_type: HouseType, box_coords: BoxCoord, already_found) -> Optional['IntersectionTrickPointing']:
 
         houses_in_box: List[List[Marks]]
         match house_type:
@@ -362,14 +362,14 @@ class IntersectionTrickClaiming(Move, MoveIOMixin):
     2) The only place a number can be placed in a given row or column is in the
     intersection with some box.
     3) The number can, a prori, be placed in at least one place in that box
-    outside of the intersecting house.
+    outside of the intersecting row or column.
 
     Attributes
     ----------
       - house_type: The type of house that intersects with the box, row or
         column.
       - house_idx: The index of the row or column that intersects with the box.
-      - box_idx: The index of the box *within* the row, 0, 1, or 2.
+      - box_idx: The index of the box *within* the row or column: 0, 1, or 2.
       - number: The number that can only be placed in the intersection.
 
     Resulting Marks
@@ -381,33 +381,44 @@ class IntersectionTrickClaiming(Move, MoveIOMixin):
     board, it only places marks.
     """
 
-    def __init__(self, house_type, house_idx, box_idx, number):
+    def __init__(self, house_type: HouseType, house_idx: Union[Row, Col], box_idx: int, number: Number):
         self.house_type = house_type
         self.house_idx = house_idx
         self.box_idx = box_idx
         self.number = number
 
     @staticmethod
-    def search(marked_board, already_found=None):
-        search_params = [
-            ("row", marked_board.iter_boxes_in_row),
-            ("column", marked_board.iter_boxes_in_column),
-        ]
-        for search_param in search_params:
-            it, new_marks = IntersectionTrickClaiming._search(
-                marked_board, already_found, *search_param
+    def search(marked_board: MarkedBoard, already_found=None) -> Optional['IntersectionTrickClaiming']:
+        for house_type in [HouseType.ROW, HouseType.COLUMN]:
+            it = IntersectionTrickClaiming._search(
+                marked_board, already_found, house_type
             )
             if it:
-                return it, new_marks
-        return None, None
+                return it
+        return None
 
     @staticmethod
-    def _search(marked_board, already_found, house_type, iterator):
+    def _search(marked_board: MarkedBoard, already_found, house_type: HouseType):
         for house_idx, number in product(range(9), range(1, 10)):
-            possible_in_box_intersection = [
-                any(number not in marks for marks in box_intersection)
-                for box_intersection in iterator(house_idx)
-            ]
+
+            # List of length three, for three boxes in each row or column.
+            # Is the number possible to place in this box ∩ (row or column)?
+            possible_in_box_intersection: List[bool]
+            match house_type:
+                case HouseType.ROW:
+                    possible_in_box_intersection = [
+                        any(number not in marks for marks in box_intersection)
+                        for box_intersection in marked_board.iter.iter_boxes_in_row(house_idx)
+                    ]
+                case HouseType.COLUMN:
+                    possible_in_box_intersection = [
+                        any(number not in marks for marks in box_intersection)
+                        for box_intersection in marked_board.iter.iter_boxes_in_column(house_idx)
+                    ]
+                case _:
+                    raise ValueError(f"HouseType {house_type} not allowed.")
+
+            # Number is possible in exactly one box intersecting the row or column.
             if sum(possible_in_box_intersection) == 1:
                 box_idx = possible_in_box_intersection.index(True)
                 it = IntersectionTrickClaiming(
@@ -420,33 +431,39 @@ class IntersectionTrickClaiming(Move, MoveIOMixin):
                 if not all_empty(new_marks) and (
                     not already_found or it not in already_found
                 ):
-                    return it, new_marks
-        return None, None
+                    return it
 
-    def compute_marks(self, marked_board):
-        new_marks = defaultdict(set)
+        return None
+
+    def compute_marks(self, marked_board: MarkedBoard) -> NewMarks:
+        new_marks: NewMarks = defaultdict(set)
         box_coords = self.box_coords
-        for coords, marks in marked_board.iter_box(box_coords):
+        for coords, _ in marked_board.iter.iter_box(box_coords):
             if not self._in_house(coords) and self.number not in marked_board[coords]:
                 new_marks[coords].add(self.number)
         return new_marks
 
-    def _in_house(self, coords):
-        return {
-            "row": coords[0] == self.house_idx,
-            "column": coords[1] == self.house_idx,
-        }[self.house_type]
+    def _in_house(self, coords: Coord) -> bool:
+        match self.house_type:
+            case HouseType.ROW:
+                return coords[0] == self.house_idx
+            case HouseType.COLUMN:
+                return coords[1] == self.house_idx
+            case _:
+                raise ValueError(f"HouseType {self.house_type} not allowed.")
 
     @property
-    def box_coords(self):
-        box_row, box_column = {
-            "row": (self.house_idx // 3, self.box_idx),
-            "column": (self.box_idx, self.house_idx // 3),
-        }[self.house_type]
-        return (box_row, box_column)
+    def box_coords(self) -> BoxCoord:
+        match self.house_type:
+            case HouseType.ROW:
+                return (self.house_idx // 3, self.box_idx)
+            case HouseType.COLUMN:
+                return (self.box_idx, self.house_idx // 3)
+            case _:
+                raise ValueError(f"HouseType {self.house_type} not allowed.")
 
-    def __hash__(self):
-        return hash((self.house_type, self.house_idx, self.box_idx, self.number))
+    def __hash__(self) -> int:
+        return hash(('IntersectionTrickClaiming', self.house_type, self.house_idx, self.box_idx, self.number))
 
 
 class NakedDouble(Move, MoveIOMixin):

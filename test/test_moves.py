@@ -218,7 +218,7 @@ class TestIntersectionTrickClaiming(TestMove):
                 (0, 8): 7,
             },
             IntersectionTrickClaiming,
-            IntersectionTrickClaiming("row", 0, 1, 1),
+            IntersectionTrickClaiming(HouseType.ROW, 0, 1, 1),
         )
 
     def test_intersection_trick_column(self):
@@ -232,7 +232,7 @@ class TestIntersectionTrickClaiming(TestMove):
                 (8, 0): 7,
             },
             IntersectionTrickClaiming,
-            IntersectionTrickClaiming("column", 0, 1, 1),
+            IntersectionTrickClaiming(HouseType.COLUMN, 0, 1, 1),
         )
 
 

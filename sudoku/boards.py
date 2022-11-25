@@ -141,7 +141,7 @@ class GameBoard(Board):
         for i in range(9):
             if i % 3 == 0:
                 s += h_seperator + "\n"
-            row_tuple = tuple(num if num else " " for _, num in self.iter_row(i))
+            row_tuple = tuple(num if num else " " for _, num in self.iter.iter_row(i))
             s += h_line.format(*row_tuple) + "\n"
         s += h_seperator
         return s
@@ -216,7 +216,7 @@ class MarkedBoard(Board):
             if i % 3 == 0:
                 s += h_seperator + "\n"
             row_tuple = tuple(
-                "*" if number in marks else " " for _, marks in self.iter_row(i)
+                "*" if number in marks else " " for _, marks in self.iter.iter_row(i)
             )
             s += h_line.format(*row_tuple) + "\n"
         s += h_seperator

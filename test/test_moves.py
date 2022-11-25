@@ -1,5 +1,6 @@
 from sudoku.boards import GameBoard, MarkedBoard
 from sudoku.moves import (
+    HouseType,
     NakedSingle,
     HiddenSingle,
     IntersectionTrickPointing,
@@ -21,8 +22,8 @@ def new_boards(data):
 class TestMove(unittest.TestCase):
     def check_move(self, board_dict, move_class, result_move=None, result_marks=None):
         gb, mb = new_boards(board_dict)
-        move, marks = move_class.search(mb)
-        # print(move)
+        move = move_class.search(mb)
+        marks = move.compute_marks(mb)
         if result_move:
             self.assertEqual(move, result_move)
         if result_marks:
@@ -31,13 +32,13 @@ class TestMove(unittest.TestCase):
 
 class TestNakedSingle(TestMove):
     def test_naked_single_row(self):
-        gb, mb = new_boards({(0, i): i + 1 for i in range(1, 10)})
-        ns, _ = NakedSingle.search(mb)
+        _, mb = new_boards({(0, i): i + 1 for i in range(1, 10)})
+        ns = NakedSingle.search(mb)
         self.assertEqual(ns, NakedSingle((0, 0), 1))
 
     def test_naked_single_column(self):
-        gb, mb = new_boards({(i, 0): i + 1 for i in range(1, 10)})
-        ns, _ = NakedSingle.search(mb)
+        _, mb = new_boards({(i, 0): i + 1 for i in range(1, 10)})
+        ns = NakedSingle.search(mb)
         self.assertEqual(ns, NakedSingle((0, 0), 1))
 
     def test_naked_single_box(self):
@@ -78,42 +79,42 @@ class TestHiddenSingle(TestMove):
         self.check_move(
             {(1, 3): 1, (2, 6): 1, (0, 1): 2, (0, 2): 3},
             HiddenSingle,
-            HiddenSingle((0, 0), "row", 1),
+            HiddenSingle((0, 0), HouseType.ROW, 1),
         )
 
     def test_hidden_single_row_middle(self):
         self.check_move(
             {(3, 0): 1, (5, 6): 1, (4, 3): 2, (4, 5): 3},
             HiddenSingle,
-            HiddenSingle((4, 4), "row", 1),
+            HiddenSingle((4, 4), HouseType.ROW, 1),
         )
 
     def test_hidden_single_column_side(self):
         self.check_move(
             {(3, 1): 1, (6, 2): 1, (1, 0): 2, (2, 0): 3},
             HiddenSingle,
-            HiddenSingle((0, 0), "column", 1),
+            HiddenSingle((0, 0), HouseType.COLUMN, 1),
         )
 
     def test_hidden_single_column_middle(self):
         self.check_move(
             {(0, 3): 1, (6, 5): 1, (3, 4): 2, (5, 4): 3},
             HiddenSingle,
-            HiddenSingle((4, 4), "column", 1),
+            HiddenSingle((4, 4), HouseType.COLUMN, 1),
         )
 
     def test_hidden_single_box_top(self):
         self.check_move(
             {(1, 3): 1, (6, 1): 1, (2, 0): 2, (2, 2): 3, (0, 2): 4},
             HiddenSingle,
-            HiddenSingle((0, 0), "box", 1),
+            HiddenSingle((0, 0), HouseType.BOX, 1),
         )
 
     def test_hidden_single_box_middle(self):
         self.check_move(
             {(5, 0): 1, (0, 5): 1, (4, 3): 2, (4, 4): 3, (3, 4): 4},
             HiddenSingle,
-            HiddenSingle((3, 3), "box", 1),
+            HiddenSingle((3, 3), HouseType.BOX, 1),
         )
 
 

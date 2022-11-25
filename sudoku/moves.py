@@ -1,5 +1,6 @@
-import abc
 import json
+from enum import Enum
+from abc import ABC, abstractmethod, abstractstaticmethod
 from copy import deepcopy
 from itertools import product
 from collections import defaultdict
@@ -7,11 +8,26 @@ from collections import defaultdict
 from sudoku.boards import MarkedBoard
 from sudoku.utils import unzip, all_empty, pairs_exclude_diagonal, iter_number_pairs
 
+from typing import Generic, TypeVar, Iterable, List, Optional, Dict, Tuple, Set
 
-FULL_MARKS = {1, 2, 3, 4, 5, 6, 7, 8, 9}
+Coord = Tuple[int, int]
+Row = int
+Col = int
+Box = Tuple[int, int]
+Number = int
+Marks = Set[Number]
+NewMarks = Dict[Coord, Marks]
+
+FULL_MARKS: Marks = {1, 2, 3, 4, 5, 6, 7, 8, 9}
 
 
-class AbstractMove(metaclass=abc.ABCMeta):
+class HouseType(Enum):
+    ROW = 0
+    COLUMN = 1
+    BOX = 2
+
+
+class Move(ABC):
     """An abstract base class for moves used in solving a sudoku board.
 
     A move is an atomic piece of logic that updates the state of a game board
@@ -34,21 +50,19 @@ class AbstractMove(metaclass=abc.ABCMeta):
     -__hash__: Compute a hash value for a board. Useful for storing moves in
       sets.
     """
-
-    @staticmethod
-    @abc.abstractmethod
-    def search(marked_board, already_found=None):
+    @abstractstaticmethod
+    def search(marked_board: MarkedBoard, already_found=None) -> Optional['Move']:
         pass
 
-    @abc.abstractmethod
-    def compute_marks(self, marked_board):
+    @abstractmethod
+    def compute_marks(self, marked_board: MarkedBoard) -> Dict[Coord, Marks]:
         pass
 
-    def __hash__(self, other):
+    def __hash__(self) -> int:
         pass
 
 
-class MoveMixin:
+class MoveIOMixin:
     """Methods in common to all move objects.
 
     This is contains serialization and printing methods.
@@ -85,25 +99,24 @@ class MoveMixin:
         return self.to_dict() == other.to_dict()
 
 
-class Finished(AbstractMove, MoveMixin):
+class Finished(Move, MoveIOMixin):
     """Represents the finished move, returned when a board is completely
     solved.
     """
-
-    def search(marked_board, already_found=None):
-        for (i, j), marks in marked_board.iter_board():
+    def search(marked_board: MarkedBoard, already_found=None) -> Optional['Finished']:
+        for (i, j), marks in marked_board.iter.iter_board():
             if marks != MarkedBoard.all_marks:
-                return None, None
-        return Finished(), None
+                return None
+        return Finished()
 
-    def compute_marks(self, marked_board):
+    def compute_marks(self, marked_board: MarkedBoard) -> NewMarks:
         return defaultdict(set)
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return 0
 
 
-class NakedSingle(AbstractMove, MoveMixin):
+class NakedSingle(Move, MoveIOMixin):
     """A naked single move.
 
     This is the most basic sudoku move. A naked single is found when a cell can
@@ -124,30 +137,29 @@ class NakedSingle(AbstractMove, MoveMixin):
     row, column, or box with the naked single.
     """
 
-    def __init__(self, coords, number):
+    def __init__(self, coords: Coord, number: Number):
         self.coords = coords
         self.number = number
 
     @staticmethod
-    def search(marked_board, already_found=None):
-        found_moves = []
-        for (i, j), marks in marked_board.iter_board():
+    def search(marked_board: MarkedBoard, already_found=None) -> Optional['NakedSingle']:
+        for (i, j), marks in marked_board.iter.iter_board():
             missing_marks = MarkedBoard.all_marks - marks
             if len(missing_marks) == 1:
                 number = next(iter(missing_marks))
-                ns = NakedSingle(coords=(i, j), number=number)
-                new_marks = ns.compute_marks(marked_board)
-                return ns, new_marks
-        return None, None
+                return NakedSingle(coords=(i, j), number=number)
+                # new_marks = ns.compute_marks(marked_board)
+                # return ns, new_marks
+        return None
 
-    def compute_marks(self, marked_board):
+    def compute_marks(self, marked_board: MarkedBoard) -> NewMarks:
         return marked_board.compute_marks_from_placed_number(self.coords, self.number)
 
-    def __hash__(self):
-        return hash((self.coords, self.number))
+    def __hash__(self) -> int:
+        return hash(('NakedSingle', self.coords, self.number))
 
 
-class HiddenSingle(AbstractMove, MoveMixin):
+class HiddenSingle(Move, MoveIOMixin):
     """A hidden single move.
 
     A hidden single is when a house (row, column, or box) has exaclty one cell
@@ -169,25 +181,27 @@ class HiddenSingle(AbstractMove, MoveMixin):
     row, column, or box with the naked single.
     """
 
-    def __init__(self, coords, house_type, number):
+    def __init__(self, coords: Coord, house_type: HouseType, number: Number):
         self.coords = coords
         self.house_type = house_type
         self.number = number
 
     @staticmethod
-    def search(marked_board, already_found=None):
+    def search(marked_board: MarkedBoard, already_found=None) -> Optional['HiddenSingle']:
         search_params = [
-            ("row", range(9), marked_board.iter_row),
-            ("column", range(9), marked_board.iter_column),
-            ("box", product(range(3), range(3)), marked_board.iter_box),
+            (HouseType.ROW, range(9), marked_board.iter.iter_row),
+            (HouseType.COLUMN, range(9), marked_board.iter.iter_column),
+            (HouseType.BOX, product(range(3), range(3)), marked_board.iter.iter_box),
         ]
         for search_param in search_params:
-            hs = HiddenSingle._search(marked_board, *search_param)
+            hs = HiddenSingle._search_single_house_type(marked_board, *search_param)
             if hs:
-                return hs, hs.compute_marks(marked_board)
-        return None, None
+                return hs
+        return None
 
-    def _search(marked_board, house_type, house_idx_iter, house_iter):
+    def _search_single_house_type(marked_board: MarkedBoard, house_type: HouseType, house_idx_iter, house_iter) -> Optional['HiddenSingle']:
+        coords_for_house: List[Coord]
+        marks_for_house: List[Marks]
         for house_idx, number in product(house_idx_iter, range(1, 10)):
             coords_for_house, marks_for_house = unzip(list(house_iter(house_idx)))
             is_marked = [number in marks for marks in marks_for_house]
@@ -197,14 +211,14 @@ class HiddenSingle(AbstractMove, MoveMixin):
                 return HiddenSingle(coords, house_type, number)
         return None
 
-    def compute_marks(self, marked_board):
+    def compute_marks(self, marked_board: MarkedBoard) -> NewMarks:
         return marked_board.compute_marks_from_placed_number(self.coords, self.number)
 
     def __hash__(self):
-        return hash((self.coords, self.number, self.house_type))
+        return hash(('HiddenSingle', self.coords, self.number, self.house_type.value))
 
 
-class IntersectionTrickPointing(AbstractMove, MoveMixin):
+class IntersectionTrickPointing(Move, MoveIOMixin):
     """An pointing intersection trick move.
 
     An pointing intersection trick is found when the following two conditions
@@ -321,7 +335,7 @@ class IntersectionTrickPointing(AbstractMove, MoveMixin):
         return hash((self.box, self.house_type, self.house_idx, self.number))
 
 
-class IntersectionTrickClaiming(AbstractMove, MoveMixin):
+class IntersectionTrickClaiming(Move, MoveIOMixin):
     """An claiming intersection trick move.
 
     A claiming intersection trick is found when the following conditions are
@@ -418,7 +432,7 @@ class IntersectionTrickClaiming(AbstractMove, MoveMixin):
         return hash((self.house_type, self.house_idx, self.box_idx, self.number))
 
 
-class NakedDouble(AbstractMove, MoveMixin):
+class NakedDouble(Move, MoveIOMixin):
     """A naked double move.
 
     A naked double occurs in a house when there are only two cells in that
@@ -507,7 +521,7 @@ class NakedDouble(AbstractMove, MoveMixin):
         )
 
 
-class HiddenDouble(AbstractMove, MoveMixin):
+class HiddenDouble(Move, MoveIOMixin):
     """A hidden double move.
 
     A naked double occurs in a house when there are two numbers that are only

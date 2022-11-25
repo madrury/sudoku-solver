@@ -11,6 +11,7 @@ from sudoku.utils import unzip, all_empty, pairs_exclude_diagonal, iter_number_p
 from typing import Generic, TypeVar, Iterable, List, Optional, Dict, Tuple, Set
 
 Coord = Tuple[int, int]
+BoxCoord = Tuple[int, int]
 Row = int
 Col = int
 Box = Tuple[int, int]
@@ -247,31 +248,43 @@ class IntersectionTrickPointing(Move, MoveIOMixin):
     board, it only places marks.
     """
 
-    def __init__(self, box, house_type, house_idx, number):
+    def __init__(self, box: BoxCoord, house_type: HouseType, house_idx: int, number: Number):
         self.box = box
         self.house_type = house_type
         self.house_idx = house_idx
         self.number = number
 
     @staticmethod
-    def search(marked_board, already_found=None):
+    def search(marked_board: MarkedBoard, already_found=None) -> Optional['IntersectionTrickPointing']:
         for box_coords in product(range(3), range(3)):
-            for house_type in ["row", "column"]:
-                it, new_marks = IntersectionTrickPointing._search(
-                    house_type, marked_board, box_coords, already_found
+            for house_type in [HouseType.ROW, HouseType.COLUMN]:
+                it = IntersectionTrickPointing._search(
+                    marked_board, house_type, box_coords, already_found
                 )
                 if it:
-                    return it, new_marks
-        return None, None
+                    return it
+        return None
 
     @staticmethod
-    def _search(house_type, marked_board, box_coords, already_found):
-        houses_in_box = IntersectionTrickPointing._make_houses_in_box(
-            marked_board, box_coords, house_type
-        )
+    def _search(marked_board, house_type, box_coords, already_found):
+
+        houses_in_box: List[List[Marks]]
+        match house_type:
+            case HouseType.ROW:
+                houses_in_box = IntersectionTrickPointing._get_marks_for_rows_in_box(
+                    marked_board, box_coords
+                )
+            case HouseType.COLUMN:
+                houses_in_box = IntersectionTrickPointing._get_marks_for_columns_in_box(
+                    marked_board, box_coords
+                )
+            case _:
+                raise ValueError(f"HouseType {house_type} not allowed.")
+
         for number in range(1, 10):
             possible_in_intersection = [
-                any(number not in marks for marks in house) for house in houses_in_box
+                any(number not in marks for marks in house)
+                for house in houses_in_box
             ]
             if sum(possible_in_intersection) == 1:
                 intersection_house = possible_in_intersection.index(True)
@@ -285,54 +298,58 @@ class IntersectionTrickPointing(Move, MoveIOMixin):
                 if not all_empty(new_marks) and (
                     not already_found or it not in already_found
                 ):
-                    return it, new_marks
-        return None, None
+                    return it
+        return None
 
-    def _make_houses_in_box(marked_board, box_coords, house_type):
-        if house_type == "row":
-            # The inner lists represent rows in both of these data structures.
-            return [
-                [
-                    marked_board[(i, j)]
-                    for j in range(3 * box_coords[1], 3 * box_coords[1] + 3)
-                ]
-                for i in range(3 * box_coords[0], 3 * box_coords[0] + 3)
-            ]
-        elif house_type == "column":
-            # The inner lists represent columns in both of these data structures.
-            return [
-                [
-                    marked_board[(i, j)]
-                    for i in range(3 * box_coords[0], 3 * box_coords[0] + 3)
-                ]
+    def _get_marks_for_rows_in_box(marked_board: MarkedBoard, box_coords: BoxCoord) -> List[List[Marks]]:
+        return [
+            [
+                marked_board[(i, j)]
                 for j in range(3 * box_coords[1], 3 * box_coords[1] + 3)
             ]
-        else:
-            raise ValueError("house_type must be 'row' or 'column'")
+            for i in range(3 * box_coords[0], 3 * box_coords[0] + 3)
+        ]
 
-    def compute_marks(self, marked_board):
-        compute_params = {
-            "row": (0, lambda p: (p[1], p[0])),
-            "column": (1, lambda p: p),
-        }[self.house_type]
-        return self._compute_marks(marked_board, *compute_params)
+    def _get_marks_for_columns_in_box(marked_board: MarkedBoard, box_coords: BoxCoord) -> List[List[Marks]]:
+        return [
+            [
+                marked_board[(i, j)]
+                for i in range(3 * box_coords[0], 3 * box_coords[0] + 3)
+            ]
+            for j in range(3 * box_coords[1], 3 * box_coords[1] + 3)
+        ]
 
-    def _compute_marks(self, marked_board, idx, maybe_transpose):
+    def compute_marks(self, marked_board: MarkedBoard) -> NewMarks:
+        match self.house_type:
+            case HouseType.ROW:
+                return self._compute_marks_for_row(marked_board)
+            case HouseType.COLUMN:
+                return self._compute_marks_for_column(marked_board)
+            case _:
+                raise ValueError(f"HouseType {self.house_type} not allowed.")
+
+    def _compute_marks_for_row(self, marked_board: MarkedBoard) -> NewMarks:
         new_marks = defaultdict(set)
-        for house_idx in range(9):
-            coords = maybe_transpose((house_idx, 3 * self.box[idx] + self.house_idx))
-            if not self.number in marked_board[
-                coords
-            ] and not IntersectionTrickPointing._in_box(coords, self.box):
+        for col_idx_within_row in range(9):
+            coords = (3 * self.box[0] + self.house_idx, col_idx_within_row)
+            if not self.number in marked_board[coords] and not IntersectionTrickPointing._in_box(coords, self.box):
+                new_marks[coords].add(self.number)
+        return new_marks
+
+    def _compute_marks_for_column(self, marked_board: MarkedBoard) -> NewMarks:
+        new_marks = defaultdict(set)
+        for row_idx_within_col in range(9):
+            coords = (row_idx_within_col, 3 * self.box[1] + self.house_idx)
+            if not self.number in marked_board[coords] and not IntersectionTrickPointing._in_box(coords, self.box):
                 new_marks[coords].add(self.number)
         return new_marks
 
     @staticmethod
-    def _in_box(coords, box):
+    def _in_box(coords, box: BoxCoord) -> bool:
         return (box[0] == coords[0] // 3) and (box[1] == coords[1] // 3)
 
-    def __hash__(self):
-        return hash((self.box, self.house_type, self.house_idx, self.number))
+    def __hash__(self) -> int:
+        return hash(('IntersectionTrickPointing', self.box, self.house_type, self.house_idx, self.number))
 
 
 class IntersectionTrickClaiming(Move, MoveIOMixin):

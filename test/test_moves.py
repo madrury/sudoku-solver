@@ -23,7 +23,7 @@ class TestMove(unittest.TestCase):
     def check_move(self, board_dict, move_class, result_move=None, result_marks=None):
         gb, mb = new_boards(board_dict)
         move = move_class.search(mb)
-        marks = move.compute_marks(mb)
+        marks = move.compute_marks(mb) if move else None
         if result_move:
             self.assertEqual(move, result_move)
         if result_marks:
@@ -132,7 +132,7 @@ class TestIntersectionTrickPointing(TestMove):
                 (2, 2): 7,
             },
             IntersectionTrickPointing,
-            IntersectionTrickPointing((0, 0), "row", 1, 1),
+            IntersectionTrickPointing((0, 0), HouseType.ROW, 1, 1),
         )
 
     def test_intersection_trick_row_no_marks(self):
@@ -168,7 +168,7 @@ class TestIntersectionTrickPointing(TestMove):
                 (7, 1): 9,
             },
             IntersectionTrickPointing,
-            IntersectionTrickPointing((0, 0), "column", 1, 1),
+            IntersectionTrickPointing((0, 0), HouseType.COLUMN, 1, 1),
         )
 
     def test_intersection_trick_column_no_marks(self):
@@ -195,14 +195,14 @@ class TestIntersectionTrickPointing(TestMove):
         self.check_move(
             {(0, 0): 9, (1, 3): 2, (1, 4): 3, (1, 5): 4},
             IntersectionTrickPointing,
-            IntersectionTrickPointing((0, 1), "row", 2, 9),
+            IntersectionTrickPointing((0, 1), HouseType.ROW, 2, 9),
         )
 
     def test_intersection_trick_center(self):
         self.check_move(
             {(0, 4): 1, (3, 5): 2, (4, 5): 3, (5, 5): 4},
             IntersectionTrickPointing,
-            IntersectionTrickPointing((1, 1), "column", 0, 1),
+            IntersectionTrickPointing((1, 1), HouseType.COLUMN, 0, 1),
         )
 
 

@@ -2,7 +2,7 @@ import json
 from enum import Enum
 from abc import ABC, abstractmethod, abstractstaticmethod
 from copy import deepcopy
-from itertools import product
+from itertools import product, compress
 from collections import defaultdict
 
 from sudoku.boards import MarkedBoard
@@ -470,7 +470,7 @@ class NakedDouble(Move, MoveIOMixin):
     """A naked double move.
 
     A naked double occurs in a house when there are only two cells in that
-    house capable of holding an set of two numbers.
+    house capable of holding a set of exactly two numbers.
 
     Attributes
     ----------
@@ -490,29 +490,29 @@ class NakedDouble(Move, MoveIOMixin):
     the two cells composing the double.
     """
 
-    def __init__(self, house_type, house_idx, double_idxs, numbers):
+    def __init__(self, house_type: HouseType, house_idx: Union[Row, Col, BoxCoord], double_idxs: Tuple[Coord, Coord], numbers: Tuple[Number, Number]):
         self.house_type = house_type
         self.house_idx = house_idx
         self.double_idxs = double_idxs
         self.numbers = set(numbers)
 
     @staticmethod
-    def search(marked_board, already_found=None):
+    def search(marked_board: MarkedBoard, already_found=None) -> Optional['NakedDouble']:
         search_params = [
-            ("row", marked_board.iter_row, range(9)),
-            ("column", marked_board.iter_column, range(9)),
-            ("box", marked_board.iter_box, product(range(3), range(3))),
+            (HouseType.ROW, marked_board.iter.iter_row, range(9)),
+            (HouseType.COLUMN, marked_board.iter.iter_column, range(9)),
+            (HouseType.BOX, marked_board.iter.iter_box, product(range(3), range(3))),
         ]
         for search_param in search_params:
-            nd, new_marks = NakedDouble._search(
+            nd = NakedDouble._search_in_single_house_type(
                 marked_board, already_found, *search_param
             )
             if nd:
-                return nd, new_marks
-        return None, None
+                return nd
+        return None
 
     @staticmethod
-    def _search(marked_board, already_found, house_type, house_iter, house_idx_iter):
+    def _search_in_single_house_type(marked_board, already_found, house_type: HouseType, house_iter, house_idx_iter) -> Optional['NakedDouble']:
         for house_idx in house_idx_iter:
             traverse_twice = pairs_exclude_diagonal(house_iter(house_idx))
             for (coords1, marks1), (coords2, marks2) in traverse_twice:
@@ -528,25 +528,27 @@ class NakedDouble(Move, MoveIOMixin):
                     if not all_empty(new_marks) and (
                         not already_found or nd not in already_found
                     ):
-                        return nd, new_marks
-        return None, None
+                        return nd
+        return None
 
-    def compute_marks(self, marked_board):
-        new_marks = defaultdict(set)
+    def compute_marks(self, marked_board: MarkedBoard) -> NewMarks:
         iterator = {
-            "row": marked_board.iter_row,
-            "column": marked_board.iter_column,
-            "box": marked_board.iter_box,
+            HouseType.ROW: marked_board.iter.iter_row,
+            HouseType.COLUMN: marked_board.iter.iter_column,
+            HouseType.BOX: marked_board.iter.iter_box
         }[self.house_type]
-        for coords, marks in iterator(self.house_idx):
+
+        new_marks = defaultdict(set)
+        for coords, _ in iterator(self.house_idx):
             if coords not in self.double_idxs:
                 added_marks = self.numbers - marked_board[coords]
                 new_marks[coords].update(added_marks)
         return new_marks
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(
             (
+                'NakedDouble',
                 self.house_type,
                 self.house_idx,
                 self.double_idxs,
@@ -558,7 +560,7 @@ class NakedDouble(Move, MoveIOMixin):
 class HiddenDouble(Move, MoveIOMixin):
     """A hidden double move.
 
-    A naked double occurs in a house when there are two numbers that are only
+    A hidden double occurs in a house when there are two numbers that are only
     capable of being placed in two of the cells within that house.
 
     Attributes
@@ -575,33 +577,33 @@ class HiddenDouble(Move, MoveIOMixin):
 
     Resulting Marks
     ---------------
-    All other numbers are placed as marks in teh two cells constituting the
+    All other numbers are placed as marks in the two cells constituting the
     double.
     """
 
-    def __init__(self, house_type, house_idx, double_idxs, numbers):
+    def __init__(self, house_type: HouseType, house_idx: Union[Row, Col, BoxCoord], double_idxs: Tuple[Coord, Coord], numbers: Tuple[Number, Number]):
         self.house_type = house_type
         self.house_idx = house_idx
         self.double_idxs = double_idxs
         self.numbers = set(numbers)
 
     @staticmethod
-    def search(marked_board, already_found=None):
+    def search(marked_board, already_found=None) -> Optional['HiddenDouble']:
         search_params = [
-            ("row", marked_board.iter_row, range(9)),
-            ("column", marked_board.iter_column, range(9)),
-            ("box", marked_board.iter_box, product(range(3), range(3))),
+            (HouseType.ROW, marked_board.iter.iter_row, range(9)),
+            (HouseType.COLUMN, marked_board.iter.iter_column, range(9)),
+            (HouseType.BOX, marked_board.iter.iter_box, product(range(3), range(3)))
         ]
         for search_param in search_params:
-            hd, new_marks = HiddenDouble._search(
+            hd = HiddenDouble._search(
                 marked_board, already_found, *search_param
             )
             if hd:
-                return hd, new_marks
-        return None, None
+                return hd
+        return None
 
     @staticmethod
-    def _search(marked_board, already_found, house_type, house_iter, house_idx_iter):
+    def _search(marked_board: MarkedBoard, already_found, house_type: HouseType, house_iter, house_idx_iter) -> Optional['HiddenDouble']:
         for house_idx, (n1, n2) in product(house_idx_iter, iter_number_pairs()):
             n1_coords, n1_possible = zip(
                 *[(coords, n1 not in marks) for coords, marks in house_iter(house_idx)]
@@ -614,9 +616,7 @@ class HiddenDouble(Move, MoveIOMixin):
                 and sum(n2_possible) == 2
                 and n1_possible == n2_possible
             ):
-                double_coords = HiddenDouble._compute_double_coords(
-                    n1_coords, n1_possible
-                )
+                double_coords = tuple(compress(n1_coords, n1_possible))
                 hd = HiddenDouble(
                     house_type=house_type,
                     house_idx=house_idx,
@@ -627,18 +627,10 @@ class HiddenDouble(Move, MoveIOMixin):
                 if not all_empty(new_marks) and (
                     not already_found or hd not in already_found
                 ):
-                    return hd, new_marks
-        return None, None
+                    return hd
+        return None
 
-    @staticmethod
-    def _compute_double_coords(coords, possible):
-        double_coords = []
-        for coord, poss in zip(coords, possible):
-            if poss:
-                double_coords.append(coord)
-        return tuple(double_coords)
-
-    def compute_marks(self, marked_board):
+    def compute_marks(self, marked_board: MarkedBoard) -> NewMarks:
         return defaultdict(
             set,
             {
@@ -651,9 +643,10 @@ class HiddenDouble(Move, MoveIOMixin):
             },
         )
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(
             (
+                'HiddenDouble',
                 self.house_type,
                 self.house_idx,
                 self.double_idxs,
@@ -662,7 +655,7 @@ class HiddenDouble(Move, MoveIOMixin):
         )
 
 
-MOVES_ORDER = [
+MOVES_ORDER: List[Move] = [
     Finished,
     NakedSingle,
     HiddenSingle,

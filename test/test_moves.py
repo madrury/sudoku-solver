@@ -249,7 +249,7 @@ class TestNakedDouble(TestMove):
                 (1, 8): 9,
             },
             NakedDouble,
-            NakedDouble("row", 1, ((1, 1), (1, 2)), (1, 2)),
+            NakedDouble(HouseType.ROW, 1, ((1, 1), (1, 2)), (1, 2)),
         )
 
     def test_naked_double_column(self):
@@ -264,7 +264,7 @@ class TestNakedDouble(TestMove):
                 (8, 1): 9,
             },
             NakedDouble,
-            NakedDouble("column", 1, ((1, 1), (2, 1)), (1, 2)),
+            NakedDouble(HouseType.COLUMN, 1, ((1, 1), (2, 1)), (1, 2)),
         )
 
     def test_naked_double_box(self):
@@ -283,7 +283,7 @@ class TestNakedDouble(TestMove):
                 (7, 1): 2,
             },
             NakedDouble,
-            NakedDouble("box", (0, 0), ((0, 2), (2, 0)), (1, 2)),
+            NakedDouble(HouseType.BOX, (0, 0), ((0, 2), (2, 0)), (1, 2)),
         )
 
     def test_naked_double_box_no_move(self):
@@ -321,7 +321,7 @@ class TestHiddenDouble(TestMove):
                 (7, 1): 2,
             },
             HiddenDouble,
-            HiddenDouble("row", 0, ((0, 0), (0, 2)), (1, 2)),
+            HiddenDouble(HouseType.ROW, 0, ((0, 0), (0, 2)), (1, 2)),
         )
 
     def test_hidden_double_row_2(self):
@@ -337,7 +337,7 @@ class TestHiddenDouble(TestMove):
                 (5, 4): 2,
             },
             HiddenDouble,
-            HiddenDouble("row", 4, ((4, 2), (4, 6)), (1, 2)),
+            HiddenDouble(HouseType.ROW, 4, ((4, 2), (4, 6)), (1, 2)),
         )
 
     def test_hidden_double_column(self):
@@ -352,7 +352,7 @@ class TestHiddenDouble(TestMove):
                 (1, 7): 2,
             },
             HiddenDouble,
-            HiddenDouble("column", 0, ((0, 0), (2, 0)), (1, 2)),
+            HiddenDouble(HouseType.COLUMN, 0, ((0, 0), (2, 0)), (1, 2)),
         )
 
     def test_hidden_double_column_2(self):
@@ -368,14 +368,14 @@ class TestHiddenDouble(TestMove):
                 (4, 5): 2,
             },
             HiddenDouble,
-            HiddenDouble("column", 4, ((2, 4), (6, 4)), (1, 2)),
+            HiddenDouble(HouseType.COLUMN, 4, ((2, 4), (6, 4)), (1, 2)),
         )
 
     def test_hidden_double_box(self):
         self.check_move(
             {(0, 6): 1, (0, 7): 2, (1, 1): 3, (2, 2): 4, (6, 0): 1, (7, 0): 2},
             HiddenDouble,
-            HiddenDouble("box", (0, 0), ((1, 2), (2, 1)), (1, 2)),
+            HiddenDouble(HouseType.BOX, (0, 0), ((1, 2), (2, 1)), (1, 2)),
         )
 
 

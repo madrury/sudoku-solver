@@ -1,64 +1,51 @@
-from sudoku.moves import (
-    MOVES_ORDER,
-    MOVES_DICT,
-    Finished,
-    NakedSingle,
-    HiddenSingle,
-    IntersectionTrickPointing,
-    IntersectionTrickClaiming,
-    NakedDouble,
-)
+from typing import List
+from math import log, exp
+
+from sudoku.moves import MOVES_ORDER, Move
+from sudoku.solver import Solution
 
 
 def sigmoid(t):
-    return t / (t + 1)
+    return 2 * exp(t) / (exp(t) + 1) - 1
 
 
-class MoveVector:
-    def __init__(self, solution):
+class MoveSchedule:
+
+    def __init__(self, solution: Solution):
         self.solution = solution
+        self.schedule: List[List[int]] = self._build_schedule()
 
-    @staticmethod
-    def empty_move_vector():
-        return [0 for _ in MOVES_ORDER]
-
-    @staticmethod
-    def increment_from_move(vector, move):
-        move_idx = MOVES_ORDER.index(move.__class__)
-        new_vector = vector[:]
-        new_vector[move_idx] += 1
-        return new_vector
-
-    def __iter__(self):
-        solution_vector = MoveVector.empty_move_vector()
-        yield solution_vector
+    def _build_schedule(self):
+        schedule = []
+        move_vector = [0 for _ in MOVES_ORDER]
         for move in self.solution.iter_moves():
-            solution_vector = MoveVector.increment_from_move(solution_vector, move)
-            yield solution_vector
+            schedule.append(move_vector[:])
+            move_idx = MOVES_ORDER.index(move.__class__)
+            move_vector[move_idx] += 1
+        schedule.append(move_vector[:])
+        return schedule
 
 
-class DifficultyVector:
-    def __init__(self, solution):
-        self.move_vector = MoveVector(solution)
+class DifficultySchedule:
 
-    def __iter__(self):
-        yield from (
-            1 + sum(sigmoid(move_count) for move_count in move_vector[2:])
-            for move_vector in self.move_vector
-        )
+    MOVE_INCREMENT = log(0.75/0.25)
+
+    def __init__(self, solution: Solution):
+        self.move_schedule = MoveSchedule(solution)
+        self.schedule: List[float] = self._build_schedule()
+
+    def _build_schedule(self):
+        return [
+            sum(sigmoid(self.MOVE_INCREMENT * mvcnt) for mvcnt in row)
+            # The final move is always Finished, which should not bump the
+            # difficulty.
+            for row in self.move_schedule.schedule[:-1]
+        ]
 
     def plot_difficulty_curve(self, ax, **kwargs):
-        difficulties = list(self)
-        n_moves = len(difficulties)
-        ax.plot(list(range(n_moves)), difficulties, **kwargs)
+        n_moves = len(self.schedule)
+        ax.plot(list(range(n_moves)), self.schedule, **kwargs)
 
-
-def calculate_sigmoid_difficulty(solution):
-    dv = list(DifficultyVector(solution))
-    return dv[-1]
-
-
-def calculate_move_vector(solution):
-    mv = list(MoveVector(solution))
-    final_moves = mv[-1]
-    return {move.__name__: final_moves[MOVES_ORDER.index(move)] for move in MOVES_ORDER}
+    @property
+    def difficulty(self) -> float:
+        return self.schedule[-1]

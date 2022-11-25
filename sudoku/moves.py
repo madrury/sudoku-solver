@@ -8,7 +8,7 @@ from collections import defaultdict
 from sudoku.boards import MarkedBoard
 from sudoku.utils import unzip, all_empty, pairs_exclude_diagonal, iter_number_pairs
 
-from typing import List, Optional, Dict, Tuple, Set, Union
+from typing import List, Optional, Dict, Tuple, Set, Union, Type
 
 Coord = Tuple[int, int]
 BoxCoord = Tuple[int, int]
@@ -52,7 +52,7 @@ class Move(ABC):
       sets.
     """
     @abstractstaticmethod
-    def search(marked_board: MarkedBoard, already_found=None) -> Optional['Move']:
+    def search(marked_board: MarkedBoard, already_found: Optional[Set['Move']]=None) -> Optional['Move']:
         pass
 
     @abstractmethod
@@ -104,7 +104,7 @@ class Finished(Move, MoveIOMixin):
     """Represents the finished move, returned when a board is completely
     solved.
     """
-    def search(marked_board: MarkedBoard, already_found=None) -> Optional['Finished']:
+    def search(marked_board: MarkedBoard, already_found: Optional[Set[Move]]=None) -> Optional['Finished']:
         for (i, j), marks in marked_board.iter.iter_board():
             if marks != MarkedBoard.all_marks:
                 return None
@@ -143,14 +143,12 @@ class NakedSingle(Move, MoveIOMixin):
         self.number = number
 
     @staticmethod
-    def search(marked_board: MarkedBoard, already_found=None) -> Optional['NakedSingle']:
+    def search(marked_board: MarkedBoard, already_found: Optional[Set[Move]]=None) -> Optional['NakedSingle']:
         for (i, j), marks in marked_board.iter.iter_board():
             missing_marks = MarkedBoard.all_marks - marks
             if len(missing_marks) == 1:
                 number = next(iter(missing_marks))
                 return NakedSingle(coords=(i, j), number=number)
-                # new_marks = ns.compute_marks(marked_board)
-                # return ns, new_marks
         return None
 
     def compute_marks(self, marked_board: MarkedBoard) -> NewMarks:
@@ -188,7 +186,7 @@ class HiddenSingle(Move, MoveIOMixin):
         self.number = number
 
     @staticmethod
-    def search(marked_board: MarkedBoard, already_found=None) -> Optional['HiddenSingle']:
+    def search(marked_board: MarkedBoard, already_found: Optional[Set[Move]]=None) -> Optional['HiddenSingle']:
         search_params = [
             (HouseType.ROW, range(9), marked_board.iter.iter_row),
             (HouseType.COLUMN, range(9), marked_board.iter.iter_column),
@@ -255,7 +253,7 @@ class IntersectionTrickPointing(Move, MoveIOMixin):
         self.number = number
 
     @staticmethod
-    def search(marked_board: MarkedBoard, already_found=None) -> Optional['IntersectionTrickPointing']:
+    def search(marked_board: MarkedBoard, already_found: Optional[Set[Move]]=None) -> Optional['IntersectionTrickPointing']:
         for box_coords in product(range(3), range(3)):
             for house_type in [HouseType.ROW, HouseType.COLUMN]:
                 it = IntersectionTrickPointing._search(
@@ -266,7 +264,7 @@ class IntersectionTrickPointing(Move, MoveIOMixin):
         return None
 
     @staticmethod
-    def _search(marked_board: MarkedBoard, house_type: HouseType, box_coords: BoxCoord, already_found) -> Optional['IntersectionTrickPointing']:
+    def _search(marked_board: MarkedBoard, house_type: HouseType, box_coords: BoxCoord, already_found: Optional[Set[Move]]) -> Optional['IntersectionTrickPointing']:
 
         houses_in_box: List[List[Marks]]
         match house_type:
@@ -388,17 +386,17 @@ class IntersectionTrickClaiming(Move, MoveIOMixin):
         self.number = number
 
     @staticmethod
-    def search(marked_board: MarkedBoard, already_found=None) -> Optional['IntersectionTrickClaiming']:
+    def search(marked_board: MarkedBoard, already_found: Optional[Set[Move]]=None) -> Optional['IntersectionTrickClaiming']:
         for house_type in [HouseType.ROW, HouseType.COLUMN]:
             it = IntersectionTrickClaiming._search(
-                marked_board, already_found, house_type
+                marked_board, house_type, already_found
             )
             if it:
                 return it
         return None
 
     @staticmethod
-    def _search(marked_board: MarkedBoard, already_found, house_type: HouseType):
+    def _search(marked_board: MarkedBoard, house_type: HouseType, already_found: Optional[Set[Move]]):
         for house_idx, number in product(range(9), range(1, 10)):
 
             # List of length three, for three boxes in each row or column.
@@ -497,7 +495,7 @@ class NakedDouble(Move, MoveIOMixin):
         self.numbers = set(numbers)
 
     @staticmethod
-    def search(marked_board: MarkedBoard, already_found=None) -> Optional['NakedDouble']:
+    def search(marked_board: MarkedBoard, already_found: Optional[Set[Move]]=None) -> Optional['NakedDouble']:
         search_params = [
             (HouseType.ROW, marked_board.iter.iter_row, range(9)),
             (HouseType.COLUMN, marked_board.iter.iter_column, range(9)),
@@ -512,7 +510,7 @@ class NakedDouble(Move, MoveIOMixin):
         return None
 
     @staticmethod
-    def _search_in_single_house_type(marked_board, already_found, house_type: HouseType, house_iter, house_idx_iter) -> Optional['NakedDouble']:
+    def _search_in_single_house_type(marked_board, already_found: Optional[Set[Move]], house_type: HouseType, house_iter, house_idx_iter) -> Optional['NakedDouble']:
         for house_idx in house_idx_iter:
             traverse_twice = pairs_exclude_diagonal(house_iter(house_idx))
             for (coords1, marks1), (coords2, marks2) in traverse_twice:
@@ -588,7 +586,7 @@ class HiddenDouble(Move, MoveIOMixin):
         self.numbers = set(numbers)
 
     @staticmethod
-    def search(marked_board, already_found=None) -> Optional['HiddenDouble']:
+    def search(marked_board, already_found: Optional[Set[Move]]=None) -> Optional['HiddenDouble']:
         search_params = [
             (HouseType.ROW, marked_board.iter.iter_row, range(9)),
             (HouseType.COLUMN, marked_board.iter.iter_column, range(9)),
@@ -603,7 +601,7 @@ class HiddenDouble(Move, MoveIOMixin):
         return None
 
     @staticmethod
-    def _search(marked_board: MarkedBoard, already_found, house_type: HouseType, house_iter, house_idx_iter) -> Optional['HiddenDouble']:
+    def _search(marked_board: MarkedBoard, already_found: Optional[Set[Move]], house_type: HouseType, house_iter, house_idx_iter) -> Optional['HiddenDouble']:
         for house_idx, (n1, n2) in product(house_idx_iter, iter_number_pairs()):
             n1_coords, n1_possible = zip(
                 *[(coords, n1 not in marks) for coords, marks in house_iter(house_idx)]
@@ -655,14 +653,14 @@ class HiddenDouble(Move, MoveIOMixin):
         )
 
 
-MOVES_ORDER: List[Move] = [
+MOVES_ORDER: List[Type[Move]] = [
     Finished,
-    NakedSingle,
     HiddenSingle,
+    NakedSingle,
     IntersectionTrickPointing,
     IntersectionTrickClaiming,
-    NakedDouble,
     HiddenDouble,
+    NakedDouble
 ]
 
 MOVES_DICT = {

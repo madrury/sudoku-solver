@@ -10,7 +10,6 @@ def sigmoid(t):
 
 
 class MoveSchedule:
-
     def __init__(self, solution: Solution):
         self.solution = solution
         self.schedule: List[List[int]] = self._build_schedule()
@@ -28,7 +27,7 @@ class MoveSchedule:
 
 class DifficultySchedule:
 
-    MOVE_INCREMENT = log(0.75/0.25)
+    MOVE_INCREMENT = log(0.75 / 0.25)
 
     def __init__(self, solution: Solution):
         self.move_schedule = MoveSchedule(solution)

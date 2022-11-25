@@ -13,7 +13,7 @@ Box = Tuple[int, int]
 Number = int
 Marks = Set[Number]
 
-NumberOrMarks = TypeVar('NumberOrMarks', Number, Marks)
+NumberOrMarks = TypeVar("NumberOrMarks", Number, Marks)
 
 
 # ABC
@@ -27,6 +27,7 @@ class BoardIteratorComponent(Generic[NumberOrMarks]):
     Contains methods commonly useful for dealing with a 9 by 9 array of
     objects - as of now, various methods for iteration.
     """
+
     def __init__(self, board: Board):
         self._board = board
 
@@ -47,15 +48,21 @@ class BoardIteratorComponent(Generic[NumberOrMarks]):
             for j in range(3 * box[1], 3 * box[1] + 3):
                 yield (i, j), self._board[(i, j)]
 
-    def iter_row_containing(self, coords: Coord) -> Iterable[Tuple[Coord, NumberOrMarks]]:
+    def iter_row_containing(
+        self, coords: Coord
+    ) -> Iterable[Tuple[Coord, NumberOrMarks]]:
         row = coords[0]
         yield from self.iter_row(row)
 
-    def iter_column_containing(self, coords: Coord) -> Iterable[Tuple[Coord, NumberOrMarks]]:
+    def iter_column_containing(
+        self, coords: Coord
+    ) -> Iterable[Tuple[Coord, NumberOrMarks]]:
         column = coords[1]
         yield from self.iter_column(column)
 
-    def iter_box_containing(self, coords: Coord) -> Iterable[Tuple[Coord, NumberOrMarks]]:
+    def iter_box_containing(
+        self, coords: Coord
+    ) -> Iterable[Tuple[Coord, NumberOrMarks]]:
         box_containing = (coords[0] // 3, coords[1] // 3)
         yield from self.iter_box(box_containing)
 
@@ -70,7 +77,6 @@ class BoardIteratorComponent(Generic[NumberOrMarks]):
             yield column[3 * j : (3 * j + 3)]
 
 
-
 class GameBoard(Board):
     """Class for representing a sudoku game board.
 
@@ -80,6 +86,7 @@ class GameBoard(Board):
     The data is stored in a dictionary, keys are tuples (i, j) in 1-9
     inclusive, and values are either a number 1-9 inclusive, or None.
     """
+
     def __init__(self):
         self.data = {(i, j): None for i in range(9) for j in range(9)}
         self.iter = BoardIteratorComponent[Number](self)
@@ -91,7 +98,7 @@ class GameBoard(Board):
         return self.data[coords]
 
     @classmethod
-    def from_websudoku_json(cls, jsn) -> 'GameBoard':
+    def from_websudoku_json(cls, jsn) -> "GameBoard":
         """Read from a json representation.
 
         Json representations are pulled from websudoku.com, for a discussion of
@@ -101,7 +108,7 @@ class GameBoard(Board):
         return cls.from_dict(dct)
 
     @classmethod
-    def from_websudoku_dict(cls, dct) -> 'GameBoard':
+    def from_websudoku_dict(cls, dct) -> "GameBoard":
         """Read from a dictionary representation.
 
         Dictionary representations are pulled from websudoku.com, so the
@@ -121,7 +128,7 @@ class GameBoard(Board):
         return board
 
     @classmethod
-    def from_color_string(cls, s: str) -> 'GameBoard':
+    def from_color_string(cls, s: str) -> "GameBoard":
         colors = "ROYGgBbPp"
         board = cls()
         for ij, ch in enumerate(s.replace(" ", "")):
@@ -170,7 +177,7 @@ class MarkedBoard(Board):
         return self.data[coords]
 
     @classmethod
-    def from_game_board(cls, game_board: GameBoard) -> 'MarkedBoard':
+    def from_game_board(cls, game_board: GameBoard) -> "MarkedBoard":
         """
         Add all marks that are a consequence of the current state of a game
         board.  I.e. add marks in every row, column, and box containing some
@@ -190,7 +197,9 @@ class MarkedBoard(Board):
         new_marks = self.compute_marks_from_placed_number(coords, number)
         self.add_marks(new_marks)
 
-    def compute_marks_from_placed_number(self, coords: Coord, number: Number) -> Dict[Coord, Marks]:
+    def compute_marks_from_placed_number(
+        self, coords: Coord, number: Number
+    ) -> Dict[Coord, Marks]:
         new_marks: Dict[Coord, Marks] = defaultdict(set)
         # Solved positions in a marked board are notated by adding all possible
         # marks.

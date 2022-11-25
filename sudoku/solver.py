@@ -41,9 +41,7 @@ class Solver:
 
     def find_next_move(self) -> Optional[Move]:
         for move in MOVES_ORDER:
-            mv = move.search(
-                self.marked_board, already_found=self.found_moves
-            )
+            mv = move.search(self.marked_board, already_found=self.found_moves)
             if mv:
                 return mv
         return None
